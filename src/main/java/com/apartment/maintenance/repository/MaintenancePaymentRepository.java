@@ -1,0 +1,162 @@
+package com.apartment.maintenance.repository;
+
+import com.apartment.maintenance.dto.DefaulterResponse;
+import com.apartment.maintenance.entity.MaintenancePayment;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+public interface MaintenancePaymentRepository
+        extends JpaRepository<MaintenancePayment, UUID> {
+
+    List<MaintenancePayment> findBySiteId(UUID siteId);
+
+    List<MaintenancePayment> findByFlatId(UUID flatId);
+
+    List<MaintenancePayment> findByRequestId(UUID requestId);
+
+    Optional<MaintenancePayment>
+    findByFlatIdAndPaymentMonthAndPaymentYear(
+            UUID flatId,
+            Integer paymentMonth,
+            Integer paymentYear
+    );
+
+    List<MaintenancePayment>
+    findBySiteIdAndPaymentMonthAndPaymentYear(
+            UUID siteId,
+            Integer paymentMonth,
+            Integer paymentYear
+    );
+
+
+    boolean existsByFlatIdAndPaymentMonthAndPaymentYear(
+            UUID flatId,
+            Integer paymentMonth,
+            Integer paymentYear
+    );
+
+    List<MaintenancePayment>
+    findByFlatIdAndPaymentStatus(UUID flatId, String status);
+
+    List<MaintenancePayment>
+    findByPaymentStatus(String status);
+
+    long countBySiteId(UUID siteId);
+
+    long countBySiteIdAndPaymentStatus(
+            UUID siteId,
+            String paymentStatus
+    );
+
+    Optional<MaintenancePayment> findByPaymentId(UUID paymentId);
+    List<MaintenancePayment>
+    findByFlatIdAndPaymentStatusOrderByPaymentYearDescPaymentMonthDesc(
+            UUID flatId,
+            String paymentStatus
+    );
+
+    @Query("""
+    SELECT
+        f.flatNumber AS flatNumber,
+        f.ownerName AS ownerName,
+        COUNT(mp.paymentId) AS pendingMonths,
+        SUM(mp.amount) AS totalDue
+    FROM MaintenancePayment mp
+    JOIN Flat f ON mp.flatId = f.flatId
+    WHERE mp.siteId = :siteId
+      AND mp.paymentStatus <> 'PAID'
+    GROUP BY f.flatNumber, f.ownerName
+    ORDER BY SUM(mp.amount) DESC
+""")
+    List<DefaulterResponse> findDefaulters(UUID siteId);
+
+    @Query("""
+    SELECT COALESCE(SUM(mp.amount),0)
+    FROM MaintenancePayment mp
+    WHERE mp.siteId = :siteId
+      AND mp.paymentStatus = 'PAID'
+      AND mp.paymentMonth = :month
+      AND mp.paymentYear = :year
+""")
+    Double getMonthlyCollections(
+            UUID siteId,
+            Integer month,
+            Integer year);
+
+    @Query("""
+    SELECT COALESCE(SUM(mp.amount),0)
+    FROM MaintenancePayment mp
+    WHERE mp.siteId = :siteId
+      AND mp.paymentStatus='PAID'
+      AND (
+            mp.paymentYear < :year OR
+            (mp.paymentYear = :year AND mp.paymentMonth < :month)
+      )
+""")
+    Double getCollectionsBefore(UUID siteId,
+                                Integer month,
+                                Integer year);
+
+    @Query(value = """
+SELECT
+    mp.payment_id,
+    mp.payment_month,
+    mp.payment_year,
+    mp.amount,
+    mp.payment_status,
+    mp.payment_date,
+    mp.created_at
+FROM maintenance_payments mp
+WHERE mp.flat_id = :flatId
+ORDER BY mp.payment_year, mp.payment_month
+""", nativeQuery = true)
+    List<Object[]> getFlatStatement(UUID flatId);
+
+    @Query(value = """
+    SELECT COALESCE(SUM(amount),0)
+    FROM maintenance_payments
+    WHERE flat_id = :flatId
+      AND payment_status <> 'APPROVED'
+""", nativeQuery = true)
+    BigDecimal getPendingAmount(UUID flatId);
+
+    @Query(value = """
+    SELECT COALESCE(SUM(amount),0)
+    FROM maintenance_payments
+    WHERE flat_id = :flatId
+      AND payment_status = 'APPROVED'
+""", nativeQuery = true)
+    BigDecimal getTotalPaid(UUID flatId);
+
+    @Query(value = """
+    SELECT COUNT(*)
+    FROM maintenance_payments
+    WHERE flat_id = :flatId
+      AND payment_status <> 'APPROVED'
+""", nativeQuery = true)
+    Long getPendingMonths(UUID flatId);
+
+    @Query(value = """
+    SELECT MAX(payment_date)
+    FROM maintenance_payments
+    WHERE flat_id = :flatId
+      AND payment_status = 'APPROVED'
+""", nativeQuery = true)
+    LocalDateTime getLastPaymentDate(UUID flatId);
+
+
+    @Query(value = """
+    SELECT user_id
+    FROM users
+    WHERE flat_id = :flatId
+""", nativeQuery = true)
+    UUID getUserUUID(UUID flatId);
+}
