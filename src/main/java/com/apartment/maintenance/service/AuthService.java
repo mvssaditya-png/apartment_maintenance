@@ -2,6 +2,7 @@ package com.apartment.maintenance.service;
 import com.apartment.maintenance.dto.AuthResponse;
 import com.apartment.maintenance.dto.VerifyOtpResponse;
 import com.apartment.maintenance.entity.User;
+import com.apartment.maintenance.exception.UnauthorizedActionException;
 import com.apartment.maintenance.repository.UserRepository;
 import com.apartment.maintenance.security.JwtUtil;
 import org.springframework.stereotype.Service;
@@ -40,7 +41,7 @@ public class AuthService {
 
         // TEMP OTP CHECK (for testing)
         if (!"123456".equals(otp)) {
-            throw new RuntimeException("Invalid OTP");
+            throw new UnauthorizedActionException("Invalid OTP");
         }
 
         User user = userRepository
