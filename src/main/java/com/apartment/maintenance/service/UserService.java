@@ -21,6 +21,10 @@ public class UserService {
         return userRepository.findByPhoneNumber(phoneNumber);
     }
 
+    public Optional<User> getUserById(UUID userId) {
+        return userRepository.findById(userId);
+    }
+
     public User getLoggedInUser() {
 
         Object principal =
