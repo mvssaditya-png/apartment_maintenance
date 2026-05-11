@@ -88,8 +88,8 @@ public interface MaintenancePaymentRepository
 """)
     Double getMonthlyCollections(
             UUID siteId,
-            Integer month,
-            Integer year);
+            String month,
+            String year);
 
     @Query("""
     SELECT COALESCE(SUM(mp.amount),0)
@@ -102,8 +102,8 @@ public interface MaintenancePaymentRepository
       )
 """)
     Double getCollectionsBefore(UUID siteId,
-                                Integer month,
-                                Integer year);
+                                String month,
+                                String year);
 
     @Query(value = """
 SELECT

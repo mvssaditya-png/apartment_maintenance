@@ -23,8 +23,8 @@ public interface ExpenseRepository
 """)
     Double getMonthlyExpenses(
             UUID siteId,
-            Integer month,
-            Integer year);
+            String month,
+            String year);
 
     @Query("""
     SELECT COALESCE(SUM(e.amount),0)
@@ -40,6 +40,6 @@ public interface ExpenseRepository
 """)
     Double getExpensesBefore(
             UUID siteId,
-            Integer month,
-            Integer year);
+            String month,
+            String year);
 }

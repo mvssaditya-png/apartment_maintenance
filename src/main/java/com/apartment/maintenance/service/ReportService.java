@@ -37,8 +37,8 @@ public class ReportService {
 
     public MonthlySummaryResponse getMonthlySummary(
             UUID userId,
-            Integer month,
-            Integer year) {
+            String month,
+            String year) {
 
         User user = userRepo.findById(userId).orElseThrow();
         UUID siteId = user.getSiteId();

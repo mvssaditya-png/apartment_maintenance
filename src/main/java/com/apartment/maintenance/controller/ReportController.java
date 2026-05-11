@@ -30,9 +30,8 @@ public class ReportController {
     @GetMapping("/monthly-summary")
     public MonthlySummaryResponse monthlySummary(
             @AuthenticationPrincipal UUID userId,
-            @RequestParam Integer month,
-            @RequestParam Integer year) {
-
+            @RequestParam String month,
+            @RequestParam String year) {
         return service.getMonthlySummary(userId, month, year);
     }
 }
