@@ -1,15 +1,20 @@
 package com.apartment.maintenance.service;
 
 import com.apartment.maintenance.dto.CreatePaymentRequest;
-import com.apartment.maintenance.entity.*;
+import com.apartment.maintenance.entity.Flat;
+import com.apartment.maintenance.entity.MaintenancePayment;
+import com.apartment.maintenance.entity.PaymentRequest;
+import com.apartment.maintenance.entity.User;
 import com.apartment.maintenance.exception.DuplicateMaintenanceException;
-import com.apartment.maintenance.repository.*;
+import com.apartment.maintenance.repository.FlatRepository;
+import com.apartment.maintenance.repository.MaintenancePaymentRepository;
+import com.apartment.maintenance.repository.PaymentRequestRepository;
+import com.apartment.maintenance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -23,50 +28,55 @@ public class PaymentRequestService {
     private final MaintenancePaymentRepository paymentRepo;
     private final UserRepository userRepo;
     private final NotificationService notificationService;
+
     @Transactional
-    public PaymentRequest createRequest(
-            UUID userId,
-            CreatePaymentRequest dto) {
+    public PaymentRequest createRequest(UUID userId, CreatePaymentRequest dto) {
 
         UUID siteId = userRepo.findById(userId)
                 .orElseThrow()
                 .getSiteId();
 
-        // ✅ CHECK IF REQUEST ALREADY GENERATED
-        boolean alreadyGenerated =
-                requestRepo.existsBySiteIdAndPaymentMonthAndPaymentYear(
-                        siteId,
-                        dto.getPaymentMonth(),
-                        dto.getPaymentYear()
+        String requestType = dto.getRequestType();
+
+        boolean isMaintenance =
+                "Maintenance".equalsIgnoreCase(requestType);
+
+        /*
+         * RULE:
+         * Maintenance       -> only one per site/month/year
+         * Special Request   -> unlimited allowed
+         */
+        if (isMaintenance) {
+
+            boolean alreadyGenerated =
+                    requestRepo.existsBySiteIdAndPaymentMonthAndPaymentYearAndRequestType(
+                            siteId,
+                            dto.getPaymentMonth(),
+                            dto.getPaymentYear(),
+                            requestType
+                    );
+
+            if (alreadyGenerated) {
+                throw new DuplicateMaintenanceException(
+                        "Maintenance already generated for this month and year"
                 );
-
-        if (alreadyGenerated) {
-            throw new DuplicateMaintenanceException(
-                    "Maintenance already generated for this month and year"
-            );
+            }
         }
-
-        // -----------------------
-        // CREATE PAYMENT REQUEST
-        // -----------------------
 
         PaymentRequest request = new PaymentRequest();
 
         request.setSiteId(siteId);
         request.setTitle(dto.getTitle());
+        request.setDescription(dto.getDescription());
         request.setAmount(dto.getAmount());
         request.setPaymentMonth(dto.getPaymentMonth());
         request.setPaymentYear(dto.getPaymentYear());
-        request.setRequestType("MAINTENANCE");
+        request.setRequestType(requestType);
         request.setStatus("generated");
         request.setCreatedBy(userId);
         request.setDueDate(dto.getDueDate());
 
         requestRepo.save(request);
-
-        // -----------------------
-        // GENERATE PAYMENTS
-        // -----------------------
 
         List<Flat> flats =
                 flatRepo.findBySiteIdAndIsActiveTrue(siteId);
@@ -75,13 +85,23 @@ public class PaymentRequestService {
 
         for (Flat flat : flats) {
 
-            // EXTRA SAFETY CHECK
-            if (paymentRepo
-                    .existsByFlatIdAndPaymentMonthAndPaymentYear(
-                            flat.getFlatId(),
-                            dto.getPaymentMonth(),
-                            dto.getPaymentYear())) {
-                continue;
+            /*
+             * Extra safety:
+             * Only skip duplicate flat payments for Maintenance.
+             * Special Requests must always generate new payment rows.
+             */
+            if (isMaintenance) {
+                boolean paymentAlreadyExists =
+                        paymentRepo.existsByFlatIdAndPaymentMonthAndPaymentYearAndRequestType(
+                                flat.getFlatId(),
+                                dto.getPaymentMonth(),
+                                dto.getPaymentYear(),
+                                requestType
+                        );
+
+                if (paymentAlreadyExists) {
+                    continue;
+                }
             }
 
             MaintenancePayment payment = new MaintenancePayment();
@@ -93,11 +113,13 @@ public class PaymentRequestService {
             payment.setPaymentYear(dto.getPaymentYear());
             payment.setPaymentStatus("PENDING");
             payment.setRequestId(request.getRequestId());
+            payment.setRequestType(requestType);
 
             payments.add(payment);
         }
 
         paymentRepo.saveAll(payments);
+
         List<User> residents =
                 userRepo.findBySiteIdAndRole(siteId, "RESIDENT");
 
@@ -106,14 +128,17 @@ public class PaymentRequestService {
             notificationService.notifyUser(
                     user.getUserId(),
                     siteId,
-                    "Maintenance Generated",
-                    "Maintenance for "
+                    dto.getTitle(),
+                    dto.getTitle()
+                            + " for "
                             + dto.getPaymentMonth()
-                            + "/" + dto.getPaymentYear()
+                            + "/"
+                            + dto.getPaymentYear()
                             + " has been generated.",
-                    "MAINTENANCE"
+                    requestType
             );
         }
+
         return request;
     }
 }

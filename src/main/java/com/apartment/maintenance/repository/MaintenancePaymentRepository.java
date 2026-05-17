@@ -22,12 +22,12 @@ public interface MaintenancePaymentRepository
 
     List<MaintenancePayment> findByRequestId(UUID requestId);
 
-    Optional<MaintenancePayment>
+   /* Optional<MaintenancePayment>
     findByFlatIdAndPaymentMonthAndPaymentYear(
             UUID flatId,
             Integer paymentMonth,
             Integer paymentYear
-    );
+    );*/
 
     List<MaintenancePayment>
     findBySiteIdAndPaymentMonthAndPaymentYear(
@@ -37,10 +37,11 @@ public interface MaintenancePaymentRepository
     );
 
 
-    boolean existsByFlatIdAndPaymentMonthAndPaymentYear(
+    boolean existsByFlatIdAndPaymentMonthAndPaymentYearAndRequestType(
             UUID flatId,
             Integer paymentMonth,
-            Integer paymentYear
+            Integer paymentYear,
+            String requestType
     );
 
     List<MaintenancePayment>
@@ -124,7 +125,7 @@ ORDER BY mp.payment_year, mp.payment_month
     SELECT COALESCE(SUM(amount),0)
     FROM maintenance_payments
     WHERE flat_id = :flatId
-      AND payment_status <> 'APPROVED'
+      AND payment_status <> 'PAID'
 """, nativeQuery = true)
     BigDecimal getPendingAmount(UUID flatId);
 
@@ -132,7 +133,7 @@ ORDER BY mp.payment_year, mp.payment_month
     SELECT COALESCE(SUM(amount),0)
     FROM maintenance_payments
     WHERE flat_id = :flatId
-      AND payment_status = 'APPROVED'
+      AND payment_status = 'PAID'
 """, nativeQuery = true)
     BigDecimal getTotalPaid(UUID flatId);
 
@@ -140,7 +141,7 @@ ORDER BY mp.payment_year, mp.payment_month
     SELECT COUNT(*)
     FROM maintenance_payments
     WHERE flat_id = :flatId
-      AND payment_status <> 'APPROVED'
+      AND payment_status <> 'PAID'
 """, nativeQuery = true)
     Long getPendingMonths(UUID flatId);
 
@@ -148,7 +149,7 @@ ORDER BY mp.payment_year, mp.payment_month
     SELECT MAX(payment_date)
     FROM maintenance_payments
     WHERE flat_id = :flatId
-      AND payment_status = 'APPROVED'
+      AND payment_status = 'PAID'
 """, nativeQuery = true)
     LocalDateTime getLastPaymentDate(UUID flatId);
 
@@ -159,4 +160,10 @@ ORDER BY mp.payment_year, mp.payment_month
     WHERE flat_id = :flatId
 """, nativeQuery = true)
     UUID getUserUUID(UUID flatId);
+
+    List<MaintenancePayment> findByFlatIdAndPaymentMonthAndPaymentYear(
+            UUID flatId,
+            Integer paymentMonth,
+            Integer paymentYear
+    );
 }

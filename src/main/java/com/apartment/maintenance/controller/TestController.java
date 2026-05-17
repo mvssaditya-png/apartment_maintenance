@@ -16,4 +16,9 @@ public class TestController {
 
         return "Logged User ID: " + userId;
     }
+
+    @GetMapping("/api/auth/test")
+    public String resaltest() {
+        return "Backend OK";
+    }
 }

@@ -53,8 +53,18 @@ public class MaintenancePayment {
     @Column(name = "request_id")
     private UUID requestId;
 
+    @Column(name = "request_type")
+    private String requestType;
+
     // getters setters
 
+    public String getRequestType() {
+        return requestType;
+    }
+
+    public void setRequestType(String requestType) {
+        this.requestType = requestType;
+    }
     public UUID getPaymentId() {
         return paymentId;
     }

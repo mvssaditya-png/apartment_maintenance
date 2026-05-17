@@ -1,11 +1,14 @@
 package com.apartment.maintenance.controller;
 
+import com.apartment.maintenance.dto.FlatStatementDTO;
+import com.apartment.maintenance.dto.LoggedInUserDTO;
 import com.apartment.maintenance.entity.User;
 import com.apartment.maintenance.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,8 +28,8 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public Optional<User> getCurrentUser(@AuthenticationPrincipal UUID userId) {
+    public ResponseEntity<LoggedInUserDTO>  getCurrentUser(@AuthenticationPrincipal UUID userId) {
 
-        return userService.getUserById(userId);
+        return ResponseEntity.ok(userService.getLoggedInUserDetails(userId));
     }
 }

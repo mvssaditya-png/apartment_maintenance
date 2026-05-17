@@ -11,10 +11,11 @@ public interface PaymentRequestRepository
         extends JpaRepository<PaymentRequest, UUID> {
 
     List<PaymentRequest> findBySiteId(UUID siteId);
-    boolean existsBySiteIdAndPaymentMonthAndPaymentYear(
+    boolean existsBySiteIdAndPaymentMonthAndPaymentYearAndRequestType(
             UUID siteId,
             Integer paymentMonth,
-            Integer paymentYear
+            Integer paymentYear,
+            String requestType
     );
 
 }
