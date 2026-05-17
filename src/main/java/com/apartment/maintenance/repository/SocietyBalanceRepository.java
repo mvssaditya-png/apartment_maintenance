@@ -16,4 +16,11 @@ public interface SocietyBalanceRepository
         WHERE site_id = :siteId
     """, nativeQuery = true)
     SocietyBalanceProjection findBalance(UUID siteId);
+
+    @Query(value = """
+        select coalesce(opening_balance, 0)
+        from society_balance
+        where site_id = :siteId
+        """, nativeQuery = true)
+    double getOpeningBalance(UUID siteId);
 }
