@@ -1,6 +1,7 @@
 package com.apartment.maintenance.controller;
 
 import com.apartment.maintenance.dto.PayMaintenanceRequest;
+import com.apartment.maintenance.dto.PaymentApprovalResponse;
 import com.apartment.maintenance.dto.VerifyPaymentRequest;
 import com.apartment.maintenance.entity.MaintenancePayment;
 import com.apartment.maintenance.entity.SocietyBalance;
@@ -41,8 +42,10 @@ public class PaymentController {
     }
 
     @GetMapping("/approvals")
-    public List<MaintenancePayment> approvals() {
-        return service.pendingApprovals();
+    public List<PaymentApprovalResponse> approvals(
+            @AuthenticationPrincipal UUID userId
+    ) {
+        return service.pendingApprovals(userId);
     }
 
     @PostMapping("/approve/{id}")

@@ -166,4 +166,26 @@ ORDER BY mp.payment_year, mp.payment_month
             Integer paymentMonth,
             Integer paymentYear
     );
+
+    @Query(value = """
+select
+mp.payment_id,
+mp.flat_id,
+fl.flat_number,
+mp.amount,
+mp.payment_month,
+mp.payment_year,
+mp.payment_status,
+mp.payment_mode,
+mp.request_type,
+mp.receipt_url,
+mp.created_at
+from maintenance_payments mp
+join flats fl
+on fl.flat_id = mp.flat_id
+where mp.payment_status='SUBMITTED'
+and mp.site_id=:siteId
+order by mp.created_at desc
+""", nativeQuery = true)
+    List<Object[]> getPendingApprovals(UUID siteId);
 }

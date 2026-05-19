@@ -1,6 +1,7 @@
 package com.apartment.maintenance.service;
 
 import com.apartment.maintenance.dto.PayMaintenanceRequest;
+import com.apartment.maintenance.dto.PaymentApprovalResponse;
 import com.apartment.maintenance.dto.VerifyPaymentRequest;
 import com.apartment.maintenance.entity.Flat;
 import com.apartment.maintenance.entity.MaintenancePayment;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -81,10 +83,30 @@ public class PaymentService {
         paymentRepo.save(payment);
     }
 
-    public List<MaintenancePayment> pendingApprovals() {
-        return paymentRepo.findByPaymentStatus("SUBMITTED");
-    }
+    public List<PaymentApprovalResponse> pendingApprovals(UUID userId) {
 
+        User user = userRepo.findById(userId)
+                .orElseThrow();
+
+        List<Object[]> rows =
+                paymentRepo.getPendingApprovals(user.getSiteId());
+
+        return rows.stream()
+                .map(row -> new PaymentApprovalResponse(
+                        (UUID) row[0],
+                        (UUID) row[1],
+                        (String) row[2],
+                        (BigDecimal) row[3],
+                        (Integer) row[4],
+                        (Integer) row[5],
+                        (String) row[6],
+                        (String) row[7],
+                        (String) row[8],
+                        (String) row[9],
+                        (LocalDateTime) row[10]
+                ))
+                .toList();
+    }
     public void verifyPayment(
             UUID userId,
             VerifyPaymentRequest dto) {
