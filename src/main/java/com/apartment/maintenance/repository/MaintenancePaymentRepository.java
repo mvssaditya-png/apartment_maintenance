@@ -188,4 +188,21 @@ and mp.site_id=:siteId
 order by mp.created_at desc
 """, nativeQuery = true)
     List<Object[]> getPendingApprovals(UUID siteId);
+
+    List<MaintenancePayment>
+    findByFlatIdAndPaymentStatusNot(
+            UUID flatId,
+            String status
+    );
+
+    @Query(value = """
+        select count(distinct flat_id)
+        from maintenance_payments
+        where site_id = :siteId
+        and payment_month = :month
+        and payment_year = :year
+        and request_type = 'Maintenance'
+        and payment_status = 'PAID'
+        """, nativeQuery = true)
+    long countPaidMaintenanceFlats(UUID siteId, Integer month, Integer year);
 }

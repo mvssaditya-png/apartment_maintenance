@@ -39,9 +39,9 @@ public class PaymentService {
                         user.getFlatNumber())
                 .orElseThrow();
 
-        return paymentRepo.findByFlatIdAndPaymentStatus(
+        return paymentRepo.findByFlatIdAndPaymentStatusNot(
                 flat.getFlatId(),
-                "PENDING"
+                "PAID"
         );
     }
     @Transactional

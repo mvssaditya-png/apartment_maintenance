@@ -31,6 +31,8 @@ public class DashboardService {
 
         UUID siteId = user.getSiteId();
 
+        LocalDate now = LocalDate.now();
+
         SocietyBalanceProjection balance =
                 balanceRepo.findBalance(siteId);
 
@@ -38,14 +40,13 @@ public class DashboardService {
                 flatRepo.countBySiteIdAndIsActiveTrue(siteId);
 
         long paidFlats =
-                paymentRepo.countBySiteIdAndPaymentStatus(
+                paymentRepo.countPaidMaintenanceFlats(
                         siteId,
-                        "PAID"
+                        now.getMonthValue(),
+                        now.getYear()
                 );
 
         long pendingFlats = totalFlats - paidFlats;
-
-        LocalDate now = LocalDate.now();
 
         List<MaintenancePayment> myPayments =
                 paymentRepo.findByFlatIdAndPaymentMonthAndPaymentYear(
