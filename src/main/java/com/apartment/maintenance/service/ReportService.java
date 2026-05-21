@@ -9,8 +9,14 @@ import com.apartment.maintenance.repository.MaintenancePaymentRepository;
 import com.apartment.maintenance.repository.SocietyBalanceRepository;
 import com.apartment.maintenance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -77,5 +83,69 @@ public class ReportService {
                 expenses,
                 closingBalance
         );
+    }
+
+    public byte[] exportDefaultersExcel(UUID userId) {
+
+        try {
+
+            List<DefaulterResponse> defaulters =
+                    getDefaulters(userId);
+
+            Workbook workbook = new XSSFWorkbook();
+
+            Sheet sheet = workbook.createSheet("Defaulters");
+
+            Row titleRow = sheet.createRow(0);
+            Cell titleCell = titleRow.createCell(0);
+            titleCell.setCellValue("Defaulters Report");
+
+            Row headerRow = sheet.createRow(2);
+
+            String[] headers = {
+                    "S.No",
+                    "Flat Number",
+                    "Owner Name",
+                    "Pending Months",
+                    "Total Due"
+            };
+
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+            }
+
+            int rowIndex = 3;
+            int serialNo = 1;
+
+            for (DefaulterResponse defaulter : defaulters) {
+
+                Row row = sheet.createRow(rowIndex++);
+
+                row.createCell(0).setCellValue(serialNo++);
+                row.createCell(1).setCellValue(defaulter.getFlatNumber());
+                row.createCell(2).setCellValue(defaulter.getOwnerName());
+                row.createCell(3).setCellValue(defaulter.getPendingMonths());
+                row.createCell(4).setCellValue(defaulter.getTotalDue());
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream outputStream =
+                    new ByteArrayOutputStream();
+
+            workbook.write(outputStream);
+            workbook.close();
+
+            return outputStream.toByteArray();
+
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "Failed to export defaulters report",
+                    e
+            );
+        }
     }
 }

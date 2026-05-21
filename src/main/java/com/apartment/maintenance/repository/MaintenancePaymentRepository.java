@@ -205,4 +205,40 @@ order by mp.created_at desc
         and payment_status = 'PAID'
         """, nativeQuery = true)
     long countPaidMaintenanceFlats(UUID siteId, Integer month, Integer year);
+
+    @Query(value = """
+        select coalesce(sum(amount), 0)
+        from maintenance_payments
+        where site_id = :siteId
+        and payment_month = :month
+        and payment_year = :year
+        and request_type = 'Special Request'
+        and payment_status = 'PAID'
+        """, nativeQuery = true)
+    BigDecimal getSpecialRequestCollected(
+            UUID siteId,
+            Integer month,
+            Integer year
+    );
+
+    @Query(value = """
+select
+mp.payment_id,
+mp.flat_id,
+fl.flat_number,
+mp.amount,
+mp.payment_month,
+mp.payment_year,
+mp.payment_status,
+mp.payment_mode,
+mp.request_type,
+mp.receipt_url,
+mp.created_at
+from maintenance_payments mp
+join flats fl on fl.flat_id = mp.flat_id
+where mp.payment_status = 'SUBMITTED'
+and mp.flat_id = :flatId
+order by mp.created_at desc
+""", nativeQuery = true)
+    List<Object[]> getPendingApprovalsByFlatId(UUID flatId);
 }

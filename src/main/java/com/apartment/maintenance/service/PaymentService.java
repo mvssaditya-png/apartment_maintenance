@@ -88,8 +88,13 @@ public class PaymentService {
         User user = userRepo.findById(userId)
                 .orElseThrow();
 
-        List<Object[]> rows =
-                paymentRepo.getPendingApprovals(user.getSiteId());
+        List<Object[]> rows;
+
+        if (user.getRole().equalsIgnoreCase("RESIDENT")) {
+            rows = paymentRepo.getPendingApprovalsByFlatId(user.getFlatId());
+        } else {
+            rows = paymentRepo.getPendingApprovals(user.getSiteId());
+        }
 
         return rows.stream()
                 .map(row -> new PaymentApprovalResponse(

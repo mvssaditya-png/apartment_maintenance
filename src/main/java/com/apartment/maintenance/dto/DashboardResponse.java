@@ -19,4 +19,5 @@ public class DashboardResponse {
 
     private BigDecimal myPendingAmount;
     private String myPaymentStatus;
+    private BigDecimal specialRequestCollected;
 }

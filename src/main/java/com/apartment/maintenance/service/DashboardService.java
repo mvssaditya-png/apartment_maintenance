@@ -45,6 +45,12 @@ public class DashboardService {
                         now.getMonthValue(),
                         now.getYear()
                 );
+        BigDecimal specialRequestCollected =
+                paymentRepo.getSpecialRequestCollected(
+                        siteId,
+                        now.getMonthValue(),
+                        now.getYear()
+                );
 
         long pendingFlats = totalFlats - paidFlats;
 
@@ -107,6 +113,7 @@ public class DashboardService {
                                 ? balance.getTotalExpenses()
                                 : BigDecimal.ZERO
                 )
+                .specialRequestCollected(specialRequestCollected)
                 .totalFlats(totalFlats)
                 .paidFlats(paidFlats)
                 .pendingFlats(pendingFlats)
