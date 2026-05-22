@@ -61,4 +61,22 @@ public class ReportController {
                 HttpStatus.OK
         );
     }
+    @GetMapping("/payment-history/export")
+    public ResponseEntity<byte[]> exportAllFlatStatements(
+            @AuthenticationPrincipal UUID userId
+    ) {
+        byte[] excelBytes = service.exportAllFlatStatementsExcel(userId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ));
+        headers.setContentDisposition(
+                ContentDisposition.attachment()
+                        .filename("all-flats-payment-history.xlsx")
+                        .build()
+        );
+
+        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+    }
 }

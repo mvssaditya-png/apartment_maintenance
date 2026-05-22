@@ -42,4 +42,5 @@ public interface ExpenseRepository
             UUID siteId,
             String month,
             String year);
+
 }

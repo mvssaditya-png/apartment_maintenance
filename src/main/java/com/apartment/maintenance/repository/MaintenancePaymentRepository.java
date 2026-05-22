@@ -241,4 +241,28 @@ and mp.flat_id = :flatId
 order by mp.created_at desc
 """, nativeQuery = true)
     List<Object[]> getPendingApprovalsByFlatId(UUID flatId);
+
+    @Query(value = """
+        select
+            mp.created_at as entry_date,
+            concat(mp.request_type, ' Charge - ', mp.payment_month, '/', mp.payment_year) as description,
+            mp.amount as debit,
+            0 as credit
+        from maintenance_payments mp
+        where mp.flat_id = :flatId
+
+        union all
+
+        select
+            coalesce(mp.approved_at, mp.payment_date, mp.created_at) as entry_date,
+            concat('Payment Received - ', coalesce(mp.payment_mode, '-')) as description,
+            0 as debit,
+            mp.amount as credit
+        from maintenance_payments mp
+        where mp.flat_id = :flatId
+        and mp.payment_status = 'PAID'
+
+        order by entry_date asc
+        """, nativeQuery = true)
+    List<Object[]> getFlatStatementEntries(UUID flatId);
 }

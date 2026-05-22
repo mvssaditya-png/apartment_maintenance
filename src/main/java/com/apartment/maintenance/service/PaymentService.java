@@ -2,6 +2,7 @@ package com.apartment.maintenance.service;
 
 import com.apartment.maintenance.dto.PayMaintenanceRequest;
 import com.apartment.maintenance.dto.PaymentApprovalResponse;
+import com.apartment.maintenance.dto.RecordPaymentRequest;
 import com.apartment.maintenance.dto.VerifyPaymentRequest;
 import com.apartment.maintenance.entity.Flat;
 import com.apartment.maintenance.entity.MaintenancePayment;
@@ -207,5 +208,67 @@ public class PaymentService {
                         flat.getFlatId(),
                         "PAID"
                 );
+    }
+
+    public List<MaintenancePayment> getPendingPaymentsByFlat(UUID userId, UUID flatId) {
+
+        User user = userRepo.findById(userId).orElseThrow();
+
+        if (!user.getRole().equalsIgnoreCase("ADMIN")
+                && !user.getRole().equalsIgnoreCase("CASHIER")) {
+            throw new UnauthorizedActionException(
+                    "Only Admin or Cashier can view flat pending payments"
+            );
+        }
+
+        return paymentRepo.findByFlatIdAndPaymentStatusNot(
+                flatId,
+                "PAID"
+        );
+    }
+
+    @Transactional
+    public String recordPayment(UUID userId, RecordPaymentRequest request) {
+
+        User user = userRepo.findById(userId).orElseThrow();
+
+        if (!user.getRole().equalsIgnoreCase("ADMIN")
+                && !user.getRole().equalsIgnoreCase("CASHIER")) {
+            throw new UnauthorizedActionException(
+                    "Only Admin or Cashier can record payment"
+            );
+        }
+
+        MaintenancePayment payment =
+                paymentRepo.findByPaymentId(request.getPaymentId())
+                        .orElseThrow();
+
+        payment.setPaymentMode(request.getPaymentMode());
+        payment.setReceiptUrl(request.getReceiptUrl());
+        payment.setPaymentStatus("PAID");
+        payment.setPaymentDate(LocalDateTime.now());
+        payment.setApprovedAt(LocalDateTime.now());
+
+        paymentRepo.save(payment);
+
+        // Reuse your existing ledger/balance update logic here.
+        // Same logic used when cashier approves submitted payment.
+
+        ledgerService.addCredit(
+                payment.getSiteId(),
+                payment.getAmount(),
+                "PAYMENT",
+                payment.getPaymentId(),
+                "Maintenance payment received"
+        );
+        notificationService.notifyUser(
+                userId,
+                payment.getSiteId(),
+                "Payment Approved",
+                "Your maintenance payment has been approved by Admin.",
+                "PAYMENT_APPROVED"
+        );
+
+        return "Payment recorded successfully";
     }
 }

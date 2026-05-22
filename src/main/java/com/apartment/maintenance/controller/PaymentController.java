@@ -2,6 +2,7 @@ package com.apartment.maintenance.controller;
 
 import com.apartment.maintenance.dto.PayMaintenanceRequest;
 import com.apartment.maintenance.dto.PaymentApprovalResponse;
+import com.apartment.maintenance.dto.RecordPaymentRequest;
 import com.apartment.maintenance.dto.VerifyPaymentRequest;
 import com.apartment.maintenance.entity.MaintenancePayment;
 import com.apartment.maintenance.entity.SocietyBalance;
@@ -102,5 +103,21 @@ public class PaymentController {
             @AuthenticationPrincipal UUID userId) {
 
         return service.getMyHistory(userId);
+    }
+
+    @GetMapping("/flat/{flatId}/pending")
+    public List<MaintenancePayment> getFlatPendingPayments(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID flatId
+    ) {
+        return service.getPendingPaymentsByFlat(userId, flatId);
+    }
+
+    @PostMapping("/record")
+    public String recordPayment(
+            @AuthenticationPrincipal UUID userId,
+            @RequestBody RecordPaymentRequest request
+    ) {
+        return service.recordPayment(userId, request);
     }
 }

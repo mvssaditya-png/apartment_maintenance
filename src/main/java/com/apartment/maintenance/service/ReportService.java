@@ -1,13 +1,11 @@
 package com.apartment.maintenance.service;
 
 import com.apartment.maintenance.dto.DefaulterResponse;
+import com.apartment.maintenance.dto.FlatStatementDTO;
 import com.apartment.maintenance.dto.MonthlySummaryResponse;
 import com.apartment.maintenance.entity.User;
 import com.apartment.maintenance.exception.UnauthorizedActionException;
-import com.apartment.maintenance.repository.ExpenseRepository;
-import com.apartment.maintenance.repository.MaintenancePaymentRepository;
-import com.apartment.maintenance.repository.SocietyBalanceRepository;
-import com.apartment.maintenance.repository.UserRepository;
+import com.apartment.maintenance.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -28,7 +26,8 @@ public class ReportService {
     private final UserRepository userRepo;
     private final ExpenseRepository expenseRepo;
     private final SocietyBalanceRepository balanceRepo;
-
+    private final FlatRepository flatRepo;
+    private final FlatService flatService;
     public List<DefaulterResponse> getDefaulters(UUID userId) {
 
         User user = userRepo.findById(userId)
@@ -146,6 +145,81 @@ public class ReportService {
                     "Failed to export defaulters report",
                     e
             );
+        }
+    }
+
+    public byte[] exportAllFlatStatementsExcel(UUID userId) {
+
+        try {
+            User user = userRepo.findById(userId).orElseThrow();
+
+            if (!user.getRole().equalsIgnoreCase("ADMIN")
+                    && !user.getRole().equalsIgnoreCase("CASHIER")) {
+                throw new UnauthorizedActionException(
+                        "Only Admin or Cashier can export all flat statements"
+                );
+            }
+
+            List<Object[]> flats = flatRepo.findFlatOptions(user.getSiteId());
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("All Flat Statements");
+
+            Row headerRow = sheet.createRow(0);
+
+            String[] headers = {
+                    "Flat Number",
+                    "Owner Name",
+                    "Date",
+                    "Description",
+                    "Debit",
+                    "Credit",
+                    "Balance After"
+            };
+
+            for (int i = 0; i < headers.length; i++) {
+                headerRow.createCell(i).setCellValue(headers[i]);
+            }
+
+            int rowIndex = 1;
+
+            for (Object[] flatRow : flats) {
+
+                UUID flatId = (UUID) flatRow[0];
+                String flatNumber = (String) flatRow[1];
+                String ownerName = (String) flatRow[2];
+
+                List<FlatStatementDTO> statement =
+                        flatService.getFlatStatement(flatId);
+
+                for (FlatStatementDTO item : statement) {
+
+                    Row row = sheet.createRow(rowIndex++);
+
+                    row.createCell(0).setCellValue(flatNumber);
+                    row.createCell(1).setCellValue(ownerName != null ? ownerName : "");
+                    row.createCell(2).setCellValue(
+                            item.getDate() != null ? item.getDate().toString() : ""
+                    );
+                    row.createCell(3).setCellValue(item.getDescription());
+                    row.createCell(4).setCellValue(item.getDebit().doubleValue());
+                    row.createCell(5).setCellValue(item.getCredit().doubleValue());
+                    row.createCell(6).setCellValue(item.getBalanceAfter().doubleValue());
+                }
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+
+            return outputStream.toByteArray();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to export all flat statements", e);
         }
     }
 }

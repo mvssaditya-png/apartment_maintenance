@@ -21,51 +21,38 @@ public class FlatStatementService {
 
     public List<FlatStatementDTO> getFlatStatement(UUID flatId) {
 
-        List<Object[]> rows = repo.getFlatStatement(flatId);
+        List<Object[]> rows =
+                repo.getFlatStatementEntries(flatId);
 
-        List<FlatStatementDTO> statement = new ArrayList<>();
+        List<FlatStatementDTO> response = new ArrayList<>();
+
         BigDecimal balance = BigDecimal.ZERO;
 
-        for (Object[] r : rows) {
+        for (Object[] row : rows) {
 
-            Integer month = (Integer) r[1];
-            Integer year = (Integer) r[2];
-            BigDecimal amount = (BigDecimal) r[3];
-            String status = (String) r[4];
-            LocalDateTime paymentDate = (LocalDateTime) r[5];
-            LocalDateTime createdAt = (LocalDateTime) r[6];
+            LocalDateTime date =
+                    ((LocalDateTime) row[0]);
 
-            // 🔴 Maintenance Charge (DEBIT)
-            balance = balance.subtract(amount);
+            String description = (String) row[1];
 
-            statement.add(new FlatStatementDTO(
-                    createdAt,
-                    "Maintenance Charge - " + month + "/" + year,
-                    amount,
-                    BigDecimal.ZERO,
-                    balance
-            ));
+            BigDecimal debit = (BigDecimal) row[2];
+            BigDecimal credit = (BigDecimal) row[3];
 
-            // 🟢 Payment Entry (CREDIT)
-            if ("APPROVED".equalsIgnoreCase(status)
-                    && paymentDate != null) {
+            balance = balance
+                    .subtract(debit)
+                    .add(credit);
 
-                balance = balance.add(amount);
-
-                statement.add(new FlatStatementDTO(
-                        paymentDate,
-                        "Maintenance Payment",
-                        BigDecimal.ZERO,
-                        amount,
-                        balance
-                ));
-            }
+            response.add(
+                    new FlatStatementDTO(
+                            date,
+                            description,
+                            debit,
+                            credit,
+                            balance
+                    )
+            );
         }
 
-        statement.sort(
-                Comparator.comparing(FlatStatementDTO::getDate)
-        );
-
-        return statement;
+        return response;
     }
 }
