@@ -10,9 +10,10 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByPhoneNumber(String phoneNumber);
+    Optional<User> findByEmail(String email);
+    List<User> findBySiteId(UUID siteId);
     UUID findSiteIdByUserId(UUID userId);
     List<User> findBySiteIdAndRole(UUID siteId, String role);
-
     @Query(value = """
 select 
 u.user_id,
