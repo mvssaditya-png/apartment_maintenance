@@ -36,4 +36,6 @@ where u.user_id = :userId
 
     List<User> findByFlatId(UUID flatId);
 
+    List<User> findBySiteIdAndRoleIn(UUID siteId, List<String> roles);
+
 }

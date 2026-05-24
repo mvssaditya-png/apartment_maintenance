@@ -25,7 +25,7 @@ public class NotificationController {
                         .getPrincipal();
 
         return notificationRepo
-                .findByUserIdOrderByCreatedAtDesc(userId);
+                .findByUserIdOrderByIsReadAscCreatedAtDesc(userId);
     }
 
     @PutMapping("/{id}/read")
