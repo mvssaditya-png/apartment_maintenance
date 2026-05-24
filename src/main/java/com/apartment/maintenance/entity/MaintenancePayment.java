@@ -56,7 +56,18 @@ public class MaintenancePayment {
     @Column(name = "request_type")
     private String requestType;
 
+    @Column(name = "last_reminder_sent_at")
+    private LocalDateTime lastReminderSentAt;
+
     // getters setters
+
+    public LocalDateTime getLastReminderSentAt() {
+        return lastReminderSentAt;
+    }
+
+    public void setLastReminderSentAt(LocalDateTime lastReminderSentAt) {
+        this.lastReminderSentAt = lastReminderSentAt;
+    }
 
     public String getRequestType() {
         return requestType;

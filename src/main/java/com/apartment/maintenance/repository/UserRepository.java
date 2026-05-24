@@ -33,4 +33,7 @@ join sites site on site.site_id = fl.site_id
 where u.user_id = :userId
 """, nativeQuery = true)
     List<Object[]> getLoggedInUserDetails(UUID userId);
+
+    List<User> findByFlatId(UUID flatId);
+
 }

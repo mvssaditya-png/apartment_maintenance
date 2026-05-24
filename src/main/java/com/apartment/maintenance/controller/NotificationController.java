@@ -38,4 +38,14 @@ public class NotificationController {
 
         notificationRepo.save(n);
     }
+    @GetMapping("/unread-count")
+    public long unreadCount() {
+
+        UUID userId =
+                (UUID) SecurityContextHolder.getContext()
+                        .getAuthentication()
+                        .getPrincipal();
+
+        return notificationRepo.countByUserIdAndIsReadFalse(userId);
+    }
 }

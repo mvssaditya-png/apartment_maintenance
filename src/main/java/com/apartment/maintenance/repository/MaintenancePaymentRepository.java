@@ -265,4 +265,22 @@ order by mp.created_at desc
         order by entry_date asc
         """, nativeQuery = true)
     List<Object[]> getFlatStatementEntries(UUID flatId);
+
+    @Query(value = """
+        select mp.*
+        from maintenance_payments mp
+        join payment_requests pr
+            on pr.request_id = mp.request_id
+        join scheduled_payment_requests spr
+            on spr.site_id = mp.site_id
+            and spr.active = true
+        where mp.payment_status in ('PENDING', 'REJECTED')
+        and pr.request_type = 'Maintenance'
+        and pr.due_date >= current_date
+        and (
+            mp.last_reminder_sent_at is null
+            or mp.last_reminder_sent_at <= now() - (spr.reminder_frequency_days || ' days')::interval
+        )
+        """, nativeQuery = true)
+    List<MaintenancePayment> findPaymentsForDueReminder();
 }

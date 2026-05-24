@@ -17,5 +17,10 @@ public interface PaymentRequestRepository
             Integer paymentYear,
             String requestType
     );
-
+    boolean existsBySiteIdAndPaymentMonthAndPaymentYearAndTitleIgnoreCase(
+            UUID siteId,
+            Integer paymentMonth,
+            Integer paymentYear,
+            String title
+    );
 }

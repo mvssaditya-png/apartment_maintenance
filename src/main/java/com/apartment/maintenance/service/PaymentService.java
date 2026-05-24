@@ -143,11 +143,26 @@ public class PaymentService {
                     userId,
                     payment.getSiteId(),
                     "Payment Approved",
-                    "Your maintenance payment has been approved.",
+                    "Your payment of ₹" + payment.getAmount()
+                            + " for "
+                            + payment.getPaymentMonth()
+                            + "/" + payment.getPaymentYear()
+                            + " has been approved successfully.",
                     "PAYMENT_APPROVED"
             );
         } else {
             payment.setPaymentStatus("REJECTED");
+            notificationService.notifyUser(
+                    userId,
+                    payment.getSiteId(),
+                    "Payment Rejected",
+                    "Your payment of ₹" + payment.getAmount()
+                            + " for "
+                            + payment.getPaymentMonth()
+                            + "/" + payment.getPaymentYear()
+                            + " was rejected. Please re-submit payment receipt.",
+                    "PAYMENT_REJECTED"
+            );
         }
 
         paymentRepo.save(payment);
@@ -174,7 +189,11 @@ public class PaymentService {
                 userId,
                 payment.getSiteId(),
                 "Payment Approved",
-                "Your maintenance payment has been approved.",
+                "Your payment of ₹" + payment.getAmount()
+                        + " for "
+                        + payment.getPaymentMonth()
+                        + "/" + payment.getPaymentYear()
+                        + " has been approved successfully.",
                 "PAYMENT_APPROVED"
         );
 
@@ -186,9 +205,19 @@ public class PaymentService {
         MaintenancePayment payment =
                 paymentRepo.findById(paymentId)
                         .orElseThrow();
-
+        UUID userId = paymentRepo.getUserUUID(payment.getFlatId());
         payment.setPaymentStatus("REJECTED");
-
+        notificationService.notifyUser(
+                userId,
+                payment.getSiteId(),
+                "Payment Rejected",
+                "Your payment of ₹" + payment.getAmount()
+                        + " for "
+                        + payment.getPaymentMonth()
+                        + "/" + payment.getPaymentYear()
+                        + " was rejected. Please re-submit payment receipt.",
+                "PAYMENT_REJECTED"
+        );
         paymentRepo.save(payment);
     }
 
@@ -261,12 +290,17 @@ public class PaymentService {
                 payment.getPaymentId(),
                 "Maintenance payment received"
         );
+
         notificationService.notifyUser(
                 userId,
                 payment.getSiteId(),
-                "Payment Approved",
-                "Your maintenance payment has been approved by Admin.",
-                "PAYMENT_APPROVED"
+                "Payment Recorded",
+                "A payment of ₹" + payment.getAmount()
+                        + " for "
+                        + payment.getPaymentMonth()
+                        + "/" + payment.getPaymentYear()
+                        + " has been recorded by Admin.",
+                "PAYMENT_RECORDED"
         );
 
         return "Payment recorded successfully";
