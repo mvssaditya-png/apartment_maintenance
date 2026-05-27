@@ -247,17 +247,19 @@ order by mp.created_at desc
             mp.created_at as entry_date,
             concat(mp.request_type, ' Charge - ', mp.payment_month, '/', mp.payment_year) as description,
             mp.amount as debit,
-            0 as credit
+            0 as credit,
+            null as receipt_pdf_url
         from maintenance_payments mp
         where mp.flat_id = :flatId
 
         union all
 
         select
-            coalesce(mp.approved_at, mp.payment_date, mp.created_at) as entry_date,
+            coalesce(mp.payment_date, mp.approved_at, mp.created_at) as entry_date,
             concat('Payment Received - ', coalesce(mp.payment_mode, '-')) as description,
             0 as debit,
-            mp.amount as credit
+            mp.amount as credit,
+            mp.receipt_pdf_url as receipt_pdf_url
         from maintenance_payments mp
         where mp.flat_id = :flatId
         and mp.payment_status = 'PAID'

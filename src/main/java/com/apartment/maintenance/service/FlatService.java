@@ -108,8 +108,17 @@ public class FlatService {
 
             String description = (String) row[1];
 
-            BigDecimal debit = (BigDecimal) row[2];
-            BigDecimal credit = (BigDecimal) row[3];
+            BigDecimal debit = row[2] != null
+                    ? new BigDecimal(row[2].toString())
+                    : BigDecimal.ZERO;
+
+            BigDecimal credit = row[3] != null
+                    ? new BigDecimal(row[3].toString())
+                    : BigDecimal.ZERO;
+
+            String receiptPdfUrl = row[4] != null
+                    ? row[4].toString()
+                    : null;
 
             balance = balance
                     .subtract(debit)
@@ -121,7 +130,8 @@ public class FlatService {
                             description,
                             debit,
                             credit,
-                            balance
+                            balance,
+                            receiptPdfUrl
                     )
             );
         }

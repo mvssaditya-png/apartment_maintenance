@@ -29,7 +29,7 @@ public class PaymentService {
     private final FlatRepository flatRepo;
     private final LedgerService ledgerService;
     private final NotificationService notificationService;
-
+    private final ReceiptPdfService receiptPdfService;
     public List<MaintenancePayment> getMyPendingPayments(UUID userId) {
 
         User user = userRepo.findById(userId).orElseThrow();
@@ -138,6 +138,9 @@ public class PaymentService {
                     payment.getPaymentId(),
                     "Maintenance payment received"
             );
+            String receiptPdfUrl = receiptPdfService.generateReceiptPdf(payment);
+            payment.setReceiptPdfUrl(receiptPdfUrl);
+            paymentRepo.save(payment);
 
             notificationService.notifyUser(
                     userId,
@@ -183,7 +186,9 @@ public class PaymentService {
                 "Maintenance payment received"
         );
         payment.setPaymentStatus("PAID");
-
+        String receiptPdfUrl = receiptPdfService.generateReceiptPdf(payment);
+        payment.setReceiptPdfUrl(receiptPdfUrl);
+        paymentRepo.save(payment);
         paymentRepo.save(payment);
         notificationService.notifyUser(
                 userId,
@@ -290,7 +295,9 @@ public class PaymentService {
                 payment.getPaymentId(),
                 "Maintenance payment received"
         );
-
+        String receiptPdfUrl = receiptPdfService.generateReceiptPdf(payment);
+        payment.setReceiptPdfUrl(receiptPdfUrl);
+        paymentRepo.save(payment);
         notificationService.notifyUser(
                 userId,
                 payment.getSiteId(),

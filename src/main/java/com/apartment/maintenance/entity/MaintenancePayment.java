@@ -59,7 +59,29 @@ public class MaintenancePayment {
     @Column(name = "last_reminder_sent_at")
     private LocalDateTime lastReminderSentAt;
 
+    @Column(name = "receipt_number")
+    private String receiptNumber;
+
+    @Column(name = "receipt_pdf_url")
+    private String receiptPdfUrl;
     // getters setters
+
+
+    public String getReceiptNumber() {
+        return receiptNumber;
+    }
+
+    public void setReceiptNumber(String receiptNumber) {
+        this.receiptNumber = receiptNumber;
+    }
+
+    public String getReceiptPdfUrl() {
+        return receiptPdfUrl;
+    }
+
+    public void setReceiptPdfUrl(String receiptPdfUrl) {
+        this.receiptPdfUrl = receiptPdfUrl;
+    }
 
     public LocalDateTime getLastReminderSentAt() {
         return lastReminderSentAt;

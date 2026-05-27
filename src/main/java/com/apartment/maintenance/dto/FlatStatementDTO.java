@@ -15,4 +15,5 @@ public class FlatStatementDTO {
     private BigDecimal debit;
     private BigDecimal credit;
     private BigDecimal balanceAfter;
+    private String receiptPdfUrl;
 }

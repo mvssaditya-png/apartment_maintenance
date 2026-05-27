@@ -33,11 +33,14 @@ public interface FlatRepository extends JpaRepository<Flat, UUID> {
         select
             fl.flat_id,
             fl.flat_number,
-            u.name
+            min(u.name) as owner_name
         from flats fl
-        left join users u on u.flat_id = fl.flat_id
+        left join users u
+            on u.flat_id = fl.flat_id
+            and u.site_id = fl.site_id
         where fl.site_id = :siteId
         and fl.is_active = true
+        group by fl.flat_id, fl.flat_number
         order by fl.flat_number
         """, nativeQuery = true)
     List<Object[]> findFlatOptions(UUID siteId);
