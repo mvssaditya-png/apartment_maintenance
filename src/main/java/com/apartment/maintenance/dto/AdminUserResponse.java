@@ -14,7 +14,10 @@ public class AdminUserResponse {
     private String email;
     private String role;
     private Boolean isActive;
-
+    private String residentType;
+    private UUID ownerUserId;
+    private String ownerName;
+    private String ownerPhoneNumber;
     public AdminUserResponse(
             UUID userId,
             UUID siteId,
@@ -24,7 +27,11 @@ public class AdminUserResponse {
             String phoneNumber,
             String email,
             String role,
-            Boolean isActive
+            Boolean isActive,
+            String residentType,
+            UUID ownerUserId,
+            String ownerName,
+            String ownerPhoneNumber
     ) {
         this.userId = userId;
         this.siteId = siteId;
@@ -35,6 +42,10 @@ public class AdminUserResponse {
         this.email = email;
         this.role = role;
         this.isActive = isActive;
+        this.residentType = residentType;
+        this.ownerName = ownerName;
+        this.ownerUserId = ownerUserId;
+        this.ownerPhoneNumber = ownerPhoneNumber;
     }
 
     public UUID getUserId() {
@@ -71,5 +82,37 @@ public class AdminUserResponse {
 
     public Boolean getIsActive() {
         return isActive;
+    }
+
+    public String getResidentType() {
+        return residentType;
+    }
+
+    public void setResidentType(String residentType) {
+        this.residentType = residentType;
+    }
+
+    public UUID getOwnerUserId() {
+        return ownerUserId;
+    }
+
+    public void setOwnerUserId(UUID ownerUserId) {
+        this.ownerUserId = ownerUserId;
+    }
+
+    public String getOwnerName() {
+        return ownerName;
+    }
+
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
+    }
+
+    public String getOwnerPhoneNumber() {
+        return ownerPhoneNumber;
+    }
+
+    public void setOwnerPhoneNumber(String ownerPhoneNumber) {
+        this.ownerPhoneNumber = ownerPhoneNumber;
     }
 }

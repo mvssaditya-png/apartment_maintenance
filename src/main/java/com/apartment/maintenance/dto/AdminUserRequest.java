@@ -14,7 +14,24 @@ public class AdminUserRequest {
     private String email;
     private String role;
     private Boolean isActive;
+    private String residentType;
+    private UUID ownerUserId;
 
+    public String getResidentType() {
+        return residentType;
+    }
+
+    public void setResidentType(String residentType) {
+        this.residentType = residentType;
+    }
+
+    public UUID getOwnerUserId() {
+        return ownerUserId;
+    }
+
+    public void setOwnerUserId(UUID ownerUserId) {
+        this.ownerUserId = ownerUserId;
+    }
     public UUID getUserId() {
         return userId;
     }

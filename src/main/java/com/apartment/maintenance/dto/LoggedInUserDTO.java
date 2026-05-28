@@ -23,4 +23,8 @@ public class LoggedInUserDTO {
     private String phoneNumber;
     private String role;
     private LocalDateTime createdAt;
+    private String residentType;
+    private UUID ownerUserId;
+    private String ownerName;
+    private String ownerPhoneNumber;
 }

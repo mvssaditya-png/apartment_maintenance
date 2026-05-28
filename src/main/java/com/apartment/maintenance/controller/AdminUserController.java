@@ -37,4 +37,10 @@ public class AdminUserController {
     ) {
         return adminUserService.updateUser(userId, request);
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/site/{siteId}/owners")
+    public List<AdminUserResponse> getOwnersBySite(@PathVariable UUID siteId) {
+        return adminUserService.getOwnersBySite(siteId);
+    }
 }

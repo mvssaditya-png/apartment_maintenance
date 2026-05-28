@@ -64,19 +64,57 @@ public interface MaintenancePaymentRepository
             String paymentStatus
     );
 
-    @Query("""
+    @Query(value = """
     SELECT
-        f.flatNumber AS flatNumber,
-        f.ownerName AS ownerName,
-        COUNT(mp.paymentId) AS pendingMonths,
-        SUM(mp.amount) AS totalDue
-    FROM MaintenancePayment mp
-    JOIN Flat f ON mp.flatId = f.flatId
-    WHERE mp.siteId = :siteId
-      AND mp.paymentStatus <> 'PAID'
-    GROUP BY f.flatNumber, f.ownerName
-    ORDER BY SUM(mp.amount) DESC
-""")
+        f.flat_number AS flatNumber,
+        f.owner_name AS ownerName,
+
+        COUNT(DISTINCT CASE
+            WHEN mp.request_type = 'Maintenance'
+            THEN CONCAT(mp.payment_year, '-', mp.payment_month)
+        END) AS maintenancePendingMonths,
+
+        COALESCE(SUM(CASE
+            WHEN mp.request_type = 'Maintenance'
+            THEN mp.amount ELSE 0
+        END), 0) AS maintenanceDue,
+
+        COUNT(CASE
+            WHEN mp.request_type = 'Special Request'
+            THEN 1
+        END) AS specialRequestCount,
+
+        COALESCE(SUM(CASE
+            WHEN mp.request_type = 'Special Request'
+            THEN mp.amount ELSE 0
+        END), 0) AS specialRequestDue,
+
+        COUNT(CASE
+            WHEN mp.request_type NOT IN ('Maintenance', 'Special Request')
+                 OR mp.request_type IS NULL
+            THEN 1
+        END) AS otherPendingCount,
+
+        COALESCE(SUM(CASE
+            WHEN mp.request_type NOT IN ('Maintenance', 'Special Request')
+                 OR mp.request_type IS NULL
+            THEN mp.amount ELSE 0
+        END), 0) AS otherDue,
+
+        COALESCE(SUM(mp.amount), 0) AS totalDue
+
+    FROM maintenance_payments mp
+    JOIN flats f ON mp.flat_id = f.flat_id
+
+    WHERE mp.site_id = :siteId
+      AND UPPER(mp.payment_status) <> 'PAID'
+
+    GROUP BY f.flat_number, f.owner_name
+
+    HAVING COALESCE(SUM(mp.amount), 0) > 0
+
+    ORDER BY totalDue DESC
+""", nativeQuery = true)
     List<DefaulterResponse> findDefaulters(UUID siteId);
 
     @Query("""

@@ -52,7 +52,11 @@ public class UserService {
                 (String) rows[7],
                 (String) rows[8],
                 (String) rows[9],
-                (LocalDateTime) rows[10]
+                (LocalDateTime) rows[10],
+                (String) rows[11],
+                (UUID) rows[12],
+                (String) rows[13],
+                (String) rows[14]
         );
     }
 

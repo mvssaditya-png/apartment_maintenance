@@ -39,13 +39,34 @@ public class User {
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "resident_type")
+    private String residentType;
+
+    @Column(name = "owner_user_id")
+    private UUID ownerUserId;
+
     // ===== Constructors =====
 
     public User() {
     }
 
+    // ===== Getters & Setters =====
 
-// ===== Getters & Setters =====
+    public String getResidentType() {
+        return residentType;
+    }
+
+    public void setResidentType(String residentType) {
+        this.residentType = residentType;
+    }
+
+    public UUID getOwnerUserId() {
+        return ownerUserId;
+    }
+
+    public void setOwnerUserId(UUID ownerUserId) {
+        this.ownerUserId = ownerUserId;
+    }
 
     public String getEmail() {
         return email;

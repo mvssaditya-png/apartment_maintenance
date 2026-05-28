@@ -7,10 +7,7 @@ import com.apartment.maintenance.entity.User;
 import com.apartment.maintenance.exception.UnauthorizedActionException;
 import com.apartment.maintenance.repository.*;
 import lombok.RequiredArgsConstructor;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
@@ -85,66 +82,161 @@ public class ReportService {
     }
 
     public byte[] exportDefaultersExcel(UUID userId) {
+        User user = userRepo.findById(userId)
+                .orElseThrow();
 
-        try {
+        UUID siteId = user.getSiteId();
+        List<DefaulterResponse> defaulters =
+                paymentRepo.findDefaulters(siteId);
 
-            List<DefaulterResponse> defaulters =
-                    getDefaulters(userId);
+        System.out.println("EXPORT DEFAULTERS COUNT = " + defaulters.size());
 
-            Workbook workbook = new XSSFWorkbook();
+        for (DefaulterResponse d : defaulters) {
+            System.out.println(
+                    "Flat=" + d.getFlatNumber()
+                            + ", Owner=" + d.getOwnerName()
+                            + ", MaintenanceMonths=" + d.getMaintenancePendingMonths()
+                            + ", MaintenanceDue=" + d.getMaintenanceDue()
+                            + ", SpecialCount=" + d.getSpecialRequestCount()
+                            + ", SpecialDue=" + d.getSpecialRequestDue()
+                            + ", OtherCount=" + d.getOtherPendingCount()
+                            + ", OtherDue=" + d.getOtherDue()
+                            + ", TotalDue=" + d.getTotalDue()
+            );
+        }
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
             Sheet sheet = workbook.createSheet("Defaulters");
 
-            Row titleRow = sheet.createRow(0);
-            Cell titleCell = titleRow.createCell(0);
-            titleCell.setCellValue("Defaulters Report");
-
-            Row headerRow = sheet.createRow(2);
+            Row headerRow = sheet.createRow(0);
 
             String[] headers = {
                     "S.No",
                     "Flat Number",
                     "Owner Name",
-                    "Pending Months",
+                    "Maintenance Pending Months",
+                    "Maintenance Due",
+                    "Special Request Count",
+                    "Special Request Due",
+                    "Other Pending Count",
+                    "Other Due",
                     "Total Due"
             };
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
 
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
             }
 
-            int rowIndex = 3;
+            int rowIndex = 1;
             int serialNo = 1;
 
+            double grandMaintenanceDue = 0;
+            double grandSpecialRequestDue = 0;
+            double grandOtherDue = 0;
+            double grandTotalDue = 0;
+
             for (DefaulterResponse defaulter : defaulters) {
+
+                long maintenanceMonths =
+                        defaulter.getMaintenancePendingMonths() != null
+                                ? defaulter.getMaintenancePendingMonths()
+                                : 0L;
+
+                double maintenanceDue =
+                        defaulter.getMaintenanceDue() != null
+                                ? defaulter.getMaintenanceDue()
+                                : 0D;
+
+                long specialRequestCount =
+                        defaulter.getSpecialRequestCount() != null
+                                ? defaulter.getSpecialRequestCount()
+                                : 0L;
+
+                double specialRequestDue =
+                        defaulter.getSpecialRequestDue() != null
+                                ? defaulter.getSpecialRequestDue()
+                                : 0D;
+
+                long otherPendingCount =
+                        defaulter.getOtherPendingCount() != null
+                                ? defaulter.getOtherPendingCount()
+                                : 0L;
+
+                double otherDue =
+                        defaulter.getOtherDue() != null
+                                ? defaulter.getOtherDue()
+                                : 0D;
+
+                double totalDue =
+                        defaulter.getTotalDue() != null
+                                ? defaulter.getTotalDue()
+                                : 0D;
+
+                grandMaintenanceDue += maintenanceDue;
+                grandSpecialRequestDue += specialRequestDue;
+                grandOtherDue += otherDue;
+                grandTotalDue += totalDue;
 
                 Row row = sheet.createRow(rowIndex++);
 
                 row.createCell(0).setCellValue(serialNo++);
-                row.createCell(1).setCellValue(defaulter.getFlatNumber());
-                row.createCell(2).setCellValue(defaulter.getOwnerName());
-                row.createCell(3).setCellValue(defaulter.getPendingMonths());
-                row.createCell(4).setCellValue(defaulter.getTotalDue());
+                row.createCell(1).setCellValue(defaulter.getFlatNumber() != null ? defaulter.getFlatNumber() : "-");
+                row.createCell(2).setCellValue(defaulter.getOwnerName() != null ? defaulter.getOwnerName() : "-");
+                row.createCell(3).setCellValue(maintenanceMonths);
+                row.createCell(4).setCellValue(maintenanceDue);
+                row.createCell(5).setCellValue(specialRequestCount);
+                row.createCell(6).setCellValue(specialRequestDue);
+                row.createCell(7).setCellValue(otherPendingCount);
+                row.createCell(8).setCellValue(otherDue);
+                row.createCell(9).setCellValue(totalDue);
             }
+
+            Row totalRow = sheet.createRow(rowIndex + 1);
+
+            CellStyle totalStyle = workbook.createCellStyle();
+            Font totalFont = workbook.createFont();
+            totalFont.setBold(true);
+            totalStyle.setFont(totalFont);
+
+            Cell totalLabelCell = totalRow.createCell(2);
+            totalLabelCell.setCellValue("Grand Total");
+            totalLabelCell.setCellStyle(totalStyle);
+
+            Cell maintenanceTotalCell = totalRow.createCell(4);
+            maintenanceTotalCell.setCellValue(grandMaintenanceDue);
+            maintenanceTotalCell.setCellStyle(totalStyle);
+
+            Cell specialRequestTotalCell = totalRow.createCell(6);
+            specialRequestTotalCell.setCellValue(grandSpecialRequestDue);
+            specialRequestTotalCell.setCellStyle(totalStyle);
+
+            Cell otherTotalCell = totalRow.createCell(8);
+            otherTotalCell.setCellValue(grandOtherDue);
+            otherTotalCell.setCellStyle(totalStyle);
+
+            Cell grandTotalCell = totalRow.createCell(9);
+            grandTotalCell.setCellValue(grandTotalDue);
+            grandTotalCell.setCellStyle(totalStyle);
 
             for (int i = 0; i < headers.length; i++) {
                 sheet.autoSizeColumn(i);
             }
 
-            ByteArrayOutputStream outputStream =
-                    new ByteArrayOutputStream();
-
             workbook.write(outputStream);
-            workbook.close();
 
             return outputStream.toByteArray();
 
         } catch (Exception e) {
-            throw new RuntimeException(
-                    "Failed to export defaulters report",
-                    e
-            );
+            throw new RuntimeException("Unable to export defaulters report", e);
         }
     }
 
