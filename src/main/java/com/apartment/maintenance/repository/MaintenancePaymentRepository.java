@@ -1,6 +1,7 @@
 package com.apartment.maintenance.repository;
 
 import com.apartment.maintenance.dto.DefaulterResponse;
+import com.apartment.maintenance.dto.MyDueResponse;
 import com.apartment.maintenance.entity.MaintenancePayment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -323,4 +324,34 @@ order by mp.created_at desc
         )
         """, nativeQuery = true)
     List<MaintenancePayment> findPaymentsForDueReminder();
+
+    @Query("""
+    SELECT new com.apartment.maintenance.dto.MyDueResponse(
+        mp.paymentId,
+        mp.siteId,
+        mp.flatId,
+        mp.paymentMonth,
+        mp.paymentYear,
+        mp.amount,
+        mp.paymentStatus,
+        mp.paymentMode,
+        mp.paymentDate,
+        mp.approvedAt,
+        mp.receiptUrl,
+        mp.createdAt,
+        mp.requestId,
+        mp.requestType,
+        pr.title,
+        pr.description,
+        mp.receiptNumber,
+        mp.receiptPdfUrl
+    )
+    FROM MaintenancePayment mp
+    LEFT JOIN PaymentRequest pr
+        ON pr.requestId = mp.requestId
+    WHERE mp.flatId = :flatId
+      AND mp.paymentStatus <> 'PAID'
+    ORDER BY mp.paymentYear DESC, mp.paymentMonth DESC, mp.createdAt DESC
+""")
+    List<MyDueResponse> findMyDuesWithRequestDetails(UUID flatId);
 }

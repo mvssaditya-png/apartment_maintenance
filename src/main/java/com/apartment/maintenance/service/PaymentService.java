@@ -1,9 +1,6 @@
 package com.apartment.maintenance.service;
 
-import com.apartment.maintenance.dto.PayMaintenanceRequest;
-import com.apartment.maintenance.dto.PaymentApprovalResponse;
-import com.apartment.maintenance.dto.RecordPaymentRequest;
-import com.apartment.maintenance.dto.VerifyPaymentRequest;
+import com.apartment.maintenance.dto.*;
 import com.apartment.maintenance.entity.Flat;
 import com.apartment.maintenance.entity.MaintenancePayment;
 import com.apartment.maintenance.entity.User;
@@ -30,19 +27,12 @@ public class PaymentService {
     private final LedgerService ledgerService;
     private final NotificationService notificationService;
     private final ReceiptPdfService receiptPdfService;
-    public List<MaintenancePayment> getMyPendingPayments(UUID userId) {
+    public List<MyDueResponse> getMyPendingPayments(UUID userId) {
 
         User user = userRepo.findById(userId).orElseThrow();
 
-        Flat flat = flatRepo
-                .findBySiteIdAndFlatNumber(
-                        user.getSiteId(),
-                        user.getFlatNumber())
-                .orElseThrow();
-
-        return paymentRepo.findByFlatIdAndPaymentStatusNot(
-                flat.getFlatId(),
-                "PAID"
+        return paymentRepo.findMyDuesWithRequestDetails(
+                user.getFlatId()
         );
     }
     @Transactional

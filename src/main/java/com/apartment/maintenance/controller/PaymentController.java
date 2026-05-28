@@ -1,9 +1,6 @@
 package com.apartment.maintenance.controller;
 
-import com.apartment.maintenance.dto.PayMaintenanceRequest;
-import com.apartment.maintenance.dto.PaymentApprovalResponse;
-import com.apartment.maintenance.dto.RecordPaymentRequest;
-import com.apartment.maintenance.dto.VerifyPaymentRequest;
+import com.apartment.maintenance.dto.*;
 import com.apartment.maintenance.entity.MaintenancePayment;
 import com.apartment.maintenance.entity.SocietyBalance;
 import com.apartment.maintenance.repository.SocietyBalanceRepository;
@@ -27,7 +24,7 @@ public class PaymentController {
     private final SocietyBalanceRepository balanceRepo;
 
     @GetMapping("/my-dues")
-    public List<MaintenancePayment> myDues() {
+    public List<MyDueResponse> myDues() {
         UUID userId = SecurityUtil.getCurrentUserId();
         return service.getMyPendingPayments(userId);
     }
