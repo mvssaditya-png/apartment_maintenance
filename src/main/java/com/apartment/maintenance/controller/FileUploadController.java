@@ -7,8 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,8 +24,8 @@ public class FileUploadController {
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(
-            @RequestParam("file") MultipartFile file) {
-
+            @RequestParam("file") MultipartFile file
+    ) {
         String fileName = fileUploadService.uploadFile(file);
 
         Map<String, Object> response = new HashMap<>();
@@ -45,41 +45,24 @@ public class FileUploadController {
                 request.getRequestURI()
                         .replace("/api/files/view/", "");
 
-        Path basePath = Path.of("uploads").toAbsolutePath().normalize();
+        fullPath = URLDecoder.decode(
+                fullPath,
+                StandardCharsets.UTF_8
+        );
 
-        Path filePath = basePath
-                .resolve(fullPath)
-                .normalize();
-
-        if (!filePath.startsWith(basePath)) {
+        if (fullPath.contains("..")) {
             throw new RuntimeException("Invalid file path");
         }
 
-        org.springframework.core.io.Resource resource =
-                new org.springframework.core.io.UrlResource(filePath.toUri());
-
-        if (!resource.exists()) {
-            throw new RuntimeException("File not found");
-        }
-
-        String contentType = Files.probeContentType(filePath);
-
-        if (contentType == null) {
-            if (resource.getFilename() != null
-                    && resource.getFilename().toLowerCase().endsWith(".pdf")) {
-                contentType = "application/pdf";
-            } else {
-                contentType = "application/octet-stream";
-            }
-        }
+        FileUploadService.S3File s3File =
+                fileUploadService.getFile(fullPath);
 
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
+                .contentType(MediaType.parseMediaType(s3File.contentType()))
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
-                        "inline; filename=\"" + resource.getFilename() + "\""
+                        "inline; filename=\"" + s3File.fileName() + "\""
                 )
-                .body(resource);
+                .body(s3File.content());
     }
-
 }
