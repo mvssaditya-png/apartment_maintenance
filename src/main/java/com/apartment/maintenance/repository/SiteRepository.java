@@ -25,4 +25,38 @@ public interface SiteRepository
         group by s.site_id, s.site_name, s.address
         """, nativeQuery = true)
     List<Object[]> getSiteProfile(UUID siteId);
+
+    @Query("""
+    select count(s)
+    from Site s
+""")
+    Long countAllSites();
+
+    @Query("""
+    select count(s)
+    from Site s
+    where s.subscriptionStatus = 'TRIAL'
+""")
+    Long countTrialSites();
+
+    @Query("""
+    select count(s)
+    from Site s
+    where s.subscriptionStatus = 'ACTIVE'
+""")
+    Long countActiveSites();
+
+    @Query("""
+    select count(s)
+    from Site s
+    where s.subscriptionStatus = 'EXPIRED'
+""")
+    Long countExpiredSites();
+
+    @Query("""
+    select count(s)
+    from Site s
+    where s.isActive = false
+""")
+    Long countInactiveSites();
 }

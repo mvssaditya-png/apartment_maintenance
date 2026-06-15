@@ -12,10 +12,10 @@ public class User {
     @GeneratedValue
     private UUID userId;
 
-    @Column(name = "site_id", nullable = false)
+    @Column(name = "site_id")
     private UUID siteId;
 
-    @Column(name = "flat_id", nullable = false)
+    @Column(name = "flat_id")
     private UUID flatId;
 
     @Column(name = "flat_number")

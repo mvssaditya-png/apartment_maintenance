@@ -48,5 +48,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             String residentType,
             Boolean isActive
     );
-
+    boolean existsByPhoneNumber(String phoneNumber);
 }
