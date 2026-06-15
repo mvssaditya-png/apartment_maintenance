@@ -61,7 +61,9 @@ public class SuperAdminService {
         site.setSubscriptionStatus("TRIAL");
 
         site.setIsActive(true);
-
+        site.setAddress(request.getAddress());
+        site.setCity(request.getCity());
+        site.setState(request.getState());
         siteRepository.save(site);
 
         User admin = new User();
@@ -255,5 +257,37 @@ public class SuperAdminService {
                                 + plan.getAmount()
                 )
                 .build();
+    }
+
+    public List<SiteSummaryResponse> getSites() {
+
+        return siteRepository.getAllSitesSummary()
+                .stream()
+                .map(row ->
+                        SiteSummaryResponse.builder()
+                                .siteId((UUID) row[0])
+                                .siteName((String) row[1])
+                                .adminName((String) row[2])
+                                .adminPhone((String) row[3])
+                                .totalFlats(
+                                        row[4] == null
+                                                ? 0
+                                                : ((Number) row[4]).intValue()
+                                )
+                                .subscriptionStatus((String) row[5])
+                                .trialEndDate(
+                                        row[6] == null
+                                                ? null
+                                                : ((LocalDate) row[6])
+                                )
+                                .subscriptionEndDate(
+                                        row[7] == null
+                                                ? null
+                                                : ((LocalDate) row[7])
+                                )
+                                .active((Boolean) row[8])
+                                .build()
+                )
+                .toList();
     }
 }

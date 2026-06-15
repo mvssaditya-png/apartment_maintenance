@@ -20,4 +20,8 @@ public class CreateSiteRequest {
     private String adminPhoneNumber;
 
     private String adminEmail;
+
+    private String address;
+    private String city;
+    private String state;
 }

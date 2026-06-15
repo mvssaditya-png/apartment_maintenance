@@ -26,10 +26,10 @@ public class SuperAdminController {
         );
     }
 
-    @GetMapping("/sites")
+    /*@GetMapping("/sites")
     public List<SiteResponse> getSites() {
         return superAdminService.getAllSites();
-    }
+    }*/
 
     @GetMapping("/dashboard")
     public SuperAdminDashboardResponse getDashboard() {
@@ -62,5 +62,10 @@ public class SuperAdminController {
             @PathVariable UUID planId
     ) {
         return superAdminService.toggleSubscriptionPlan(planId);
+    }
+
+    @GetMapping("/sites")
+    public List<SiteSummaryResponse> getSites() {
+        return superAdminService.getSites();
     }
 }

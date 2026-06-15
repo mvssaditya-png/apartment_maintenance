@@ -59,4 +59,48 @@ public interface SiteRepository
     where s.isActive = false
 """)
     Long countInactiveSites();
+
+    @Query(value = """
+select
+    s.site_id,
+    s.site_name,
+    coalesce(
+        (
+            select u.name
+            from users u
+            where u.site_id = s.site_id
+            and u.role = 'ADMIN'
+            limit 1
+        ),
+        '-'
+    ) as admin_name,
+
+    coalesce(
+        (
+            select u.phone_number
+            from users u
+            where u.site_id = s.site_id
+            and u.role = 'ADMIN'
+            limit 1
+        ),
+        '-'
+    ) as admin_phone,
+
+    (
+        select count(*)
+        from flats f
+        where f.site_id = s.site_id
+        and f.is_active = true
+    ) as total_flats,
+
+    s.subscription_status,
+    s.trial_end_date,
+    s.subscription_end_date,
+    s.is_active
+
+from sites s
+
+order by s.site_name
+""", nativeQuery = true)
+    List<Object[]> getAllSitesSummary();
 }
