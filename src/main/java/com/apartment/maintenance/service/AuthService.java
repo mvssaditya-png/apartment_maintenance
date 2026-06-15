@@ -54,6 +54,7 @@ public class AuthService {
         return new VerifyOtpResponse(
                 token,
                 user.getUserId(),
+                user.getRole(),
                 "Login Successful"
         );
     }
