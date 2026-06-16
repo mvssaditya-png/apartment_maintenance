@@ -21,4 +21,6 @@ public class SubscriptionPlanResponse {
     private BigDecimal amount;
 
     private String label;
+
+    private Boolean active;
 }

@@ -249,6 +249,7 @@ public class SuperAdminService {
                 .maxFlats(plan.getMaxFlats())
                 .durationMonths(plan.getDurationMonths())
                 .amount(plan.getAmount())
+                .active(plan.getActive())
                 .label(
                         range
                                 + " | "
