@@ -3,6 +3,7 @@ package com.apartment.maintenance.dto;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -27,4 +28,14 @@ public class SiteSummaryResponse {
     private LocalDate subscriptionEndDate;
 
     private Boolean active;
+
+    private String address;
+
+    private String state;
+
+    private String city;
+
+    private BigDecimal maintenanceAmount;
+
+    private BigDecimal openingBalance;
 }

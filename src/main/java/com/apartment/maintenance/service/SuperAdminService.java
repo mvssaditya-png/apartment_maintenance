@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -287,8 +288,76 @@ public class SuperAdminService {
                                                 : ((LocalDate) row[7])
                                 )
                                 .active((Boolean) row[8])
+                                .openingBalance((BigDecimal) row[9])
+                                .maintenanceAmount((BigDecimal) row[10])
+                                .address((String) row[11])
+                                .city((String) row[12])
+                                .state((String) row[13])
                                 .build()
                 )
                 .toList();
+    }
+
+    @Transactional
+    public SiteSummaryResponse updateSite(
+            UUID siteId,
+            UpdateSiteRequest request
+    ) {
+        Site site = siteRepository.findById(siteId)
+                .orElseThrow(() -> new RuntimeException("Site not found"));
+
+        site.setSiteName(request.getSiteName());
+        site.setAddress(request.getAddress());
+        site.setCity(request.getCity());
+        site.setState(request.getState());
+        site.setMaintenanceAmount(request.getMaintenanceAmount());
+        site.setOpeningBalance(request.getOpeningBalance());
+        site.setTotalFlats(request.getTotalFlats());
+
+        siteRepository.save(site);
+
+        List<User> admins =
+                userRepository.findBySiteIdAndRole(siteId, "ADMIN");
+
+        User admin;
+
+        if (admins.isEmpty()) {
+            admin = new User();
+            admin.setSiteId(siteId);
+            admin.setRole("ADMIN");
+            admin.setIsActive(true);
+        } else {
+            admin = admins.get(0);
+        }
+
+        admin.setName(request.getAdminName());
+        admin.setPhoneNumber(request.getAdminPhoneNumber());
+        admin.setEmail(request.getAdminEmail());
+
+        userRepository.save(admin);
+
+        return getSiteSummaryById(siteId);
+    }
+
+    @Transactional
+    public SiteSummaryResponse toggleSite(
+            UUID siteId
+    ) {
+        Site site = siteRepository.findById(siteId)
+                .orElseThrow(() -> new RuntimeException("Site not found"));
+
+        site.setIsActive(!Boolean.TRUE.equals(site.getIsActive()));
+
+        siteRepository.save(site);
+
+        return getSiteSummaryById(siteId);
+    }
+
+    private SiteSummaryResponse getSiteSummaryById(UUID siteId) {
+        return getSites()
+                .stream()
+                .filter(site -> site.getSiteId().equals(siteId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Site not found"));
     }
 }

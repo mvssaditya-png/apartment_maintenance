@@ -96,7 +96,12 @@ select
     s.subscription_status,
     s.trial_end_date,
     s.subscription_end_date,
-    s.is_active
+    s.is_active,
+    s.opening_balance,
+    s.maintenance_amount,
+    s.address,
+    s.city,
+    s.state
 
 from sites s
 

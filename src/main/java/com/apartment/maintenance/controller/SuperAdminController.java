@@ -68,4 +68,19 @@ public class SuperAdminController {
     public List<SiteSummaryResponse> getSites() {
         return superAdminService.getSites();
     }
+
+    @PutMapping("/sites/{siteId}")
+    public SiteSummaryResponse updateSite(
+            @PathVariable UUID siteId,
+            @RequestBody UpdateSiteRequest request
+    ) {
+        return superAdminService.updateSite(siteId, request);
+    }
+
+    @PatchMapping("/sites/{siteId}/toggle")
+    public SiteSummaryResponse toggleSite(
+            @PathVariable UUID siteId
+    ) {
+        return superAdminService.toggleSite(siteId);
+    }
 }
