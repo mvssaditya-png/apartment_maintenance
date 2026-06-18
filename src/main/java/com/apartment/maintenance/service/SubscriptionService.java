@@ -4,9 +4,7 @@ import com.apartment.maintenance.dto.SubscriptionPlanResponse;
 import com.apartment.maintenance.dto.SubscriptionStatusResponse;
 import com.apartment.maintenance.entity.Site;
 import com.apartment.maintenance.entity.User;
-import com.apartment.maintenance.repository.SiteRepository;
-import com.apartment.maintenance.repository.SubscriptionPlanRepository;
-import com.apartment.maintenance.repository.UserRepository;
+import com.apartment.maintenance.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +16,6 @@ import com.apartment.maintenance.dto.CreateSubscriptionOrderRequest;
 import com.apartment.maintenance.dto.CreateSubscriptionOrderResponse;
 import com.apartment.maintenance.entity.SiteSubscription;
 import com.apartment.maintenance.entity.SubscriptionPlan;
-import com.apartment.maintenance.repository.SiteSubscriptionRepository;
 import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
 import org.json.JSONObject;
@@ -48,6 +45,7 @@ public class SubscriptionService {
     private String razorpayKeySecret;
 
     private final SiteSubscriptionRepository siteSubscriptionRepository;
+    private final FlatRepository flatRepository;
     public SubscriptionStatusResponse getStatus(UUID userId) {
 
         User user = userRepository.findById(userId).orElseThrow();
@@ -60,6 +58,7 @@ public class SubscriptionService {
                     .expired(false)
                     .daysRemaining(null)
                     .message("Super Admin access allowed")
+                    .siteName("SmartSociety")
                     .build();
         }
 
@@ -67,6 +66,7 @@ public class SubscriptionService {
 
         if (Boolean.FALSE.equals(site.getIsActive())) {
             return SubscriptionStatusResponse.builder()
+                    .siteName(site.getSiteName())
                     .status("INACTIVE")
                     .allowed(false)
                     .trial(false)
@@ -87,6 +87,7 @@ public class SubscriptionService {
                         ChronoUnit.DAYS.between(today, site.getTrialEndDate());
 
                 return SubscriptionStatusResponse.builder()
+                        .siteName(site.getSiteName())
                         .status("TRIAL")
                         .allowed(true)
                         .trial(true)
@@ -112,6 +113,7 @@ public class SubscriptionService {
                         ChronoUnit.DAYS.between(today, site.getSubscriptionEndDate());
 
                 return SubscriptionStatusResponse.builder()
+                        .siteName(site.getSiteName())
                         .status("ACTIVE")
                         .allowed(true)
                         .trial(false)
@@ -136,12 +138,18 @@ public class SubscriptionService {
         boolean isAdmin =
                 "ADMIN".equalsIgnoreCase(user.getRole());
 
+        Site site = siteRepository.findById(user.getSiteId())
+                .orElse(null);
+
         return SubscriptionStatusResponse.builder()
+                .siteName(site != null ? site.getSiteName() : null)
                 .status("EXPIRED")
                 .allowed(isAdmin)
                 .trial(false)
                 .expired(true)
                 .daysRemaining(0L)
+                .trialEndDate(site != null ? site.getTrialEndDate() : null)
+                .subscriptionEndDate(site != null ? site.getSubscriptionEndDate() : null)
                 .message(
                         isAdmin
                                 ? "Subscription expired. Please renew to continue."
@@ -161,9 +169,12 @@ public class SubscriptionService {
         Site site = siteRepository.findById(user.getSiteId()).orElseThrow();
 
         Integer flatCount =
-                site.getTotalFlats() == null || site.getTotalFlats() <= 0
-                        ? 1
-                        : site.getTotalFlats();
+                Math.max(
+                        flatRepository
+                                .countActiveFlats(site.getSiteId())
+                                .intValue(),
+                        1
+                );
 
         return subscriptionPlanRepository.findPlansForFlatCount(flatCount)
                 .stream()
@@ -197,9 +208,12 @@ public class SubscriptionService {
                             .orElseThrow();
 
             Integer flatCount =
-                    site.getTotalFlats() == null || site.getTotalFlats() <= 0
-                            ? 1
-                            : site.getTotalFlats();
+                    Math.max(
+                            flatRepository
+                                    .countActiveFlats(site.getSiteId())
+                                    .intValue(),
+                            1
+                    );
 
             if (!Boolean.TRUE.equals(plan.getActive())
                     || plan.getMinFlats() > flatCount
@@ -388,5 +402,62 @@ public class SubscriptionService {
         }
 
         return result.toString();
+    }
+
+    @Transactional
+    public VerifySubscriptionPaymentResponse testActivate(
+            UUID userId,
+            VerifySubscriptionPaymentRequest request
+    ) {
+        User user = userRepository.findById(userId).orElseThrow();
+
+        if (!"ADMIN".equalsIgnoreCase(user.getRole())) {
+            throw new RuntimeException("Only admin can activate subscription");
+        }
+
+        SiteSubscription subscription =
+                siteSubscriptionRepository
+                        .findByRazorpayOrderId(request.getRazorpayOrderId())
+                        .orElseThrow(() -> new RuntimeException("Subscription order not found"));
+
+        if (!subscription.getSiteId().equals(user.getSiteId())) {
+            throw new RuntimeException("Invalid subscription order");
+        }
+
+        Site site =
+                siteRepository.findById(subscription.getSiteId())
+                        .orElseThrow();
+
+        LocalDate today = LocalDate.now();
+
+        LocalDate startDate =
+                site.getSubscriptionEndDate() != null
+                        && !today.isAfter(site.getSubscriptionEndDate())
+                        ? site.getSubscriptionEndDate().plusDays(1)
+                        : today;
+
+        LocalDate endDate =
+                startDate.plusMonths(subscription.getDurationMonths());
+
+        subscription.setRazorpayPaymentId("TEST_PAYMENT_" + System.currentTimeMillis());
+        subscription.setRazorpaySignature("TEST_SIGNATURE");
+        subscription.setStartDate(startDate);
+        subscription.setEndDate(endDate);
+        subscription.setStatus("PAID");
+
+        siteSubscriptionRepository.save(subscription);
+
+        site.setSubscriptionStatus("ACTIVE");
+        site.setSubscriptionStartDate(startDate);
+        site.setSubscriptionEndDate(endDate);
+
+        siteRepository.save(site);
+
+        return VerifySubscriptionPaymentResponse.builder()
+                .status("ACTIVE")
+                .message("Test subscription activated successfully")
+                .subscriptionStartDate(startDate)
+                .subscriptionEndDate(endDate)
+                .build();
     }
 }

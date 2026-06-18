@@ -24,4 +24,6 @@ public class SubscriptionStatusResponse {
     private LocalDate subscriptionEndDate;
 
     private String message;
+
+    private String siteName;
 }

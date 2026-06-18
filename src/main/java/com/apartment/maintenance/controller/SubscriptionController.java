@@ -46,4 +46,12 @@ public class SubscriptionController {
         return subscriptionService.verifyPayment(userId, request);
     }
 
+    @PostMapping("/test-activate")
+    public VerifySubscriptionPaymentResponse testActivate(
+            @AuthenticationPrincipal UUID userId,
+            @RequestBody VerifySubscriptionPaymentRequest request
+    ) {
+        return subscriptionService.testActivate(userId, request);
+    }
+
 }

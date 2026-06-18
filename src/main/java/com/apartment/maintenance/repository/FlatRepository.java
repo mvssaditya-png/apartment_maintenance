@@ -44,4 +44,12 @@ public interface FlatRepository extends JpaRepository<Flat, UUID> {
         order by fl.flat_number
         """, nativeQuery = true)
     List<Object[]> findFlatOptions(UUID siteId);
+
+    @Query("""
+        select count(f)
+        from Flat f
+        where f.siteId = :siteId
+        and f.isActive = true
+    """)
+    Long countActiveFlats(UUID siteId);
 }
