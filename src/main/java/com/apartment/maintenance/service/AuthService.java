@@ -11,17 +11,19 @@ import java.util.Optional;
 
 @Service
 public class AuthService {
-
+    private final OtpService otpService;
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final SmsEventService smsEventService;
 
     public AuthService(UserRepository userRepository,
                        JwtUtil jwtUtil,
-                       SmsEventService smsEventService) {
+                       SmsEventService smsEventService,
+                       OtpService otpService) {
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
         this.smsEventService = smsEventService;
+        this.otpService = otpService;
     }
 
     public boolean sendOtp(String phoneNumber) {
@@ -32,21 +34,25 @@ public class AuthService {
         if (user.isEmpty()) {
             return false;
         }
+        try {
 
-        String otp = "123456";
+            String otp = otpService.generateOtp(phoneNumber);
 
-        smsEventService.sendLoginOtp(phoneNumber, otp);
+            smsEventService.sendLoginOtp(phoneNumber, otp);
 
-        System.out.println("OTP sent: " + otp);
+            System.out.println("OTP sent: " + otp);
 
-        return true;
+            return true;
+        }catch (RuntimeException ex) {
+
+            throw ex;
+
+        }
     }
 
     public VerifyOtpResponse verifyOtp(String phoneNumber, String otp) {
 
-        if (!"123456".equals(otp)) {
-            throw new UnauthorizedActionException("Invalid OTP");
-        }
+        otpService.verifyOtp(phoneNumber, otp);
 
         User user = userRepository
                 .findByPhoneNumber(phoneNumber)

@@ -11,8 +11,7 @@ public class PaymentRequestScheduler {
 
     private final ScheduledPaymentRequestService scheduledPaymentRequestService;
 
-    // Runs every month on 1st at 6:00 AM
-    @Scheduled(cron = "0 0 6 1 * *")
+    @Scheduled(cron = "0 0 2 * * *")
     public void generateMonthlyPaymentRequests() {
         scheduledPaymentRequestService.runMonthlyScheduler();
     }

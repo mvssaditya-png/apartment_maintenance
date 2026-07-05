@@ -39,3 +39,7 @@ msg91:
   auth-key: ${MSG91_AUTH_KEY:}
   sender-id: MBRSSS
   country-code: "91"
+otp:
+  expiry-minutes: 5
+  max-requests: 5
+  request-window-minutes: 15
