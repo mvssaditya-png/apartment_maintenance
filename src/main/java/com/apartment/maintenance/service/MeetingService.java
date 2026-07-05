@@ -22,7 +22,7 @@ public class MeetingService {
     private final MeetingRepository meetingRepo;
     private final UserRepository userRepo;
     private final NotificationService notificationService;
-
+    private final SmsEventService smsEventService;
     public List<Meeting> getMeetings(UUID userId) {
 
         User user = userRepo.findById(userId).orElseThrow();
@@ -80,6 +80,7 @@ public class MeetingService {
                             + ".",
                     "MEETING"
             );
+            smsEventService.meetingCreated(member, savedMeeting);
         }
 
         return savedMeeting;

@@ -3,11 +3,13 @@ package com.apartment.maintenance.service;
 import com.apartment.maintenance.entity.MaintenancePayment;
 import com.apartment.maintenance.entity.User;
 import com.apartment.maintenance.repository.MaintenancePaymentRepository;
+import com.apartment.maintenance.repository.PaymentRequestRepository;
 import com.apartment.maintenance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -17,7 +19,9 @@ public class DueReminderService {
 
     private final MaintenancePaymentRepository paymentRepo;
     private final UserRepository userRepo;
+    private final PaymentRequestRepository paymentRequestRepository;
     private final NotificationService notificationService;
+    private final SmsEventService smsEventService;
 
     @Transactional
     public void sendDueReminders() {
@@ -27,8 +31,13 @@ public class DueReminderService {
 
         for (MaintenancePayment payment : payments) {
 
-            List<User> users =
-                    userRepo.findByFlatId(payment.getFlatId());
+            LocalDate dueDate = null;
+
+            if (payment.getRequestId() != null) {
+                dueDate = paymentRequestRepository.findDueDateByRequestId(payment.getRequestId());
+            }
+
+            List<User> users = userRepo.findByFlatId(payment.getFlatId());
 
             for (User user : users) {
 
@@ -44,6 +53,13 @@ public class DueReminderService {
                                 + payment.getPaymentYear()
                                 + " is pending.",
                         "DUE_REMINDER"
+                );
+
+                smsEventService.paymentDueReminder(
+                        user,
+                        payment.getAmount(),
+                        user.getFlatNumber(),
+                        dueDate
                 );
             }
 

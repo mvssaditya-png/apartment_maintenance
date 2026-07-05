@@ -20,7 +20,7 @@ public class NoticeService {
     private final NoticeRepository noticeRepo;
     private final UserRepository userRepo;
     private final NotificationService notificationService;
-
+    private final SmsEventService smsEventService;
     public List<Notice> getNotices(UUID userId) {
         User user = userRepo.findById(userId).orElseThrow();
 
@@ -63,6 +63,7 @@ public class NoticeService {
                     request.getMessage(),
                     "NOTICE"
             );
+            smsEventService.noticeCreated(resident, savedNotice);
         }
 
         return savedNotice;

@@ -49,4 +49,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             Boolean isActive
     );
     boolean existsByPhoneNumber(String phoneNumber);
+    List<User> findBySiteIdAndRoleAndIsActive(UUID siteId, String role, Boolean isActive);
 }

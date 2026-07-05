@@ -33,3 +33,9 @@ aws:
 razorpay:
   key-id: ${RAZORPAY_KEY_ID}
   key-secret: ${RAZORPAY_KEY_SECRET}
+msg91:
+  enabled: false
+  base-url: https://api.msg91.com/api/v5/flow/
+  auth-key: ${MSG91_AUTH_KEY:}
+  sender-id: MBRSSS
+  country-code: "91"

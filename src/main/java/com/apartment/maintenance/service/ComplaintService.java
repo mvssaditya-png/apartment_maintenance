@@ -21,7 +21,7 @@ public class ComplaintService {
     private final ComplaintRepository complaintRepo;
     private final UserRepository userRepo;
     private final NotificationService notificationService;
-
+    private final SmsEventService smsEventService;
     public List<Complaint> getComplaints(UUID userId) {
 
         User user = userRepo.findById(userId).orElseThrow();
@@ -74,6 +74,7 @@ public class ComplaintService {
                             + request.getTitle(),
                     "COMPLAINT"
             );
+            smsEventService.complaintCreated(receiver, savedComplaint);
         }
 
         return savedComplaint;
@@ -119,7 +120,8 @@ public class ComplaintService {
                         + ".",
                 "COMPLAINT_UPDATED"
         );
-
+        User complaintUser = userRepo.findById(complaint.getUserId()).orElse(null);
+        smsEventService.complaintUpdated(complaintUser, updatedComplaint);
         return updatedComplaint;
     }
 

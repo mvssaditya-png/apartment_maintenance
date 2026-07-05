@@ -4,23 +4,32 @@ import com.apartment.maintenance.entity.PaymentRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-public interface PaymentRequestRepository
-        extends JpaRepository<PaymentRequest, UUID> {
+public interface PaymentRequestRepository extends JpaRepository<PaymentRequest, UUID> {
 
     List<PaymentRequest> findBySiteId(UUID siteId);
+
     boolean existsBySiteIdAndPaymentMonthAndPaymentYearAndRequestType(
             UUID siteId,
             Integer paymentMonth,
             Integer paymentYear,
             String requestType
     );
+
     boolean existsBySiteIdAndPaymentMonthAndPaymentYearAndTitleIgnoreCase(
             UUID siteId,
             Integer paymentMonth,
             Integer paymentYear,
             String title
     );
+
+    @Query("""
+        select pr.dueDate
+        from PaymentRequest pr
+        where pr.requestId = :requestId
+    """)
+    LocalDate findDueDateByRequestId(UUID requestId);
 }

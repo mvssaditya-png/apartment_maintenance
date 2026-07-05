@@ -1,5 +1,5 @@
 package com.apartment.maintenance.service;
-import com.apartment.maintenance.dto.AuthResponse;
+
 import com.apartment.maintenance.dto.VerifyOtpResponse;
 import com.apartment.maintenance.entity.User;
 import com.apartment.maintenance.exception.UnauthorizedActionException;
@@ -14,14 +14,16 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
+    private final SmsEventService smsEventService;
 
     public AuthService(UserRepository userRepository,
-                       JwtUtil jwtUtil) {
+                       JwtUtil jwtUtil,
+                       SmsEventService smsEventService) {
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
+        this.smsEventService = smsEventService;
     }
 
-    // Step 1: Send OTP (Mock)
     public boolean sendOtp(String phoneNumber) {
 
         Optional<User> user =
@@ -31,15 +33,17 @@ public class AuthService {
             return false;
         }
 
-        System.out.println("OTP sent: 123456");
+        String otp = "123456";
+
+        smsEventService.sendLoginOtp(phoneNumber, otp);
+
+        System.out.println("OTP sent: " + otp);
 
         return true;
     }
 
-    // Step 2: Verify OTP
     public VerifyOtpResponse verifyOtp(String phoneNumber, String otp) {
 
-        // TEMP OTP CHECK (for testing)
         if (!"123456".equals(otp)) {
             throw new UnauthorizedActionException("Invalid OTP");
         }

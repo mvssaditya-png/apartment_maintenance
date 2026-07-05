@@ -28,7 +28,7 @@ public class PaymentRequestService {
     private final MaintenancePaymentRepository paymentRepo;
     private final UserRepository userRepo;
     private final NotificationService notificationService;
-
+    private final SmsEventService smsEventService;
     @Transactional
     public PaymentRequest createRequest(UUID userId, CreatePaymentRequest dto) {
 
@@ -137,6 +137,7 @@ public class PaymentRequestService {
                             + " has been generated.",
                     requestType
             );
+            smsEventService.paymentRequestCreated(user, request);
         }
 
         return request;

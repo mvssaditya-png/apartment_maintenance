@@ -23,6 +23,7 @@ public class SuperAdminService {
     private final SiteRepository siteRepository;
     private final UserRepository userRepository;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
+    private final SmsEventService smsEventService;
     @Transactional
     public SiteResponse createSite(
             CreateSiteRequest request
@@ -66,7 +67,6 @@ public class SuperAdminService {
         site.setCity(request.getCity());
         site.setState(request.getState());
         siteRepository.save(site);
-
         User admin = new User();
 
         admin.setSiteId(site.getSiteId());
@@ -86,6 +86,7 @@ public class SuperAdminService {
         admin.setIsActive(true);
 
         userRepository.save(admin);
+        smsEventService.trialStarted(admin, site);
 
         return mapToResponse(site);
     }

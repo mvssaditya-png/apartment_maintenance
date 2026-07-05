@@ -27,6 +27,7 @@ public class PaymentService {
     private final LedgerService ledgerService;
     private final NotificationService notificationService;
     private final ReceiptPdfService receiptPdfService;
+    private final SmsEventService smsEventService;
     public List<MyDueResponse> getMyPendingPayments(UUID userId) {
 
         User user = userRepo.findById(userId).orElseThrow();
@@ -50,6 +51,7 @@ public class PaymentService {
         payment.setPaymentDate(LocalDateTime.now());
 
         paymentRepo.save(payment);
+
     }
 
     public void submitPayment(
@@ -72,6 +74,7 @@ public class PaymentService {
         payment.setPaymentStatus("SUBMITTED");
         payment.setPaymentDate(LocalDateTime.now());
         paymentRepo.save(payment);
+        smsEventService.paymentSubmitted(user, payment);
     }
 
     public List<PaymentApprovalResponse> pendingApprovals(UUID userId) {
@@ -143,6 +146,7 @@ public class PaymentService {
                             + " has been approved successfully.",
                     "PAYMENT_APPROVED"
             );
+            smsEventService.paymentSubmitted(user, payment);
         } else {
             payment.setPaymentStatus("REJECTED");
             notificationService.notifyUser(
@@ -156,6 +160,7 @@ public class PaymentService {
                             + " was rejected. Please re-submit payment receipt.",
                     "PAYMENT_REJECTED"
             );
+            smsEventService.paymentSubmitted(user, payment);
         }
 
         paymentRepo.save(payment);
@@ -191,6 +196,8 @@ public class PaymentService {
                         + " has been approved successfully.",
                 "PAYMENT_APPROVED"
         );
+        User resident = userRepo.findById(userId).orElse(null);
+        smsEventService.paymentApproved(resident, payment);
 
     }
 
@@ -213,6 +220,8 @@ public class PaymentService {
                         + " was rejected. Please re-submit payment receipt.",
                 "PAYMENT_REJECTED"
         );
+        User resident = userRepo.findById(userId).orElse(null);
+        smsEventService.paymentRejected(resident, payment, "Please re-submit payment receipt");
         paymentRepo.save(payment);
     }
 
@@ -288,8 +297,10 @@ public class PaymentService {
         String receiptPdfUrl = receiptPdfService.generateReceiptPdf(payment);
         payment.setReceiptPdfUrl(receiptPdfUrl);
         paymentRepo.save(payment);
+        UUID residentUserId = paymentRepo.getUserUUID(payment.getFlatId());
+
         notificationService.notifyUser(
-                userId,
+                residentUserId,
                 payment.getSiteId(),
                 "Payment Recorded",
                 "A payment of ₹" + payment.getAmount()
@@ -299,6 +310,9 @@ public class PaymentService {
                         + " has been recorded by Admin.",
                 "PAYMENT_RECORDED"
         );
+
+        User resident = userRepo.findById(residentUserId).orElse(null);
+        smsEventService.directPaymentRecorded(resident, payment);
 
         return "Payment recorded successfully";
     }

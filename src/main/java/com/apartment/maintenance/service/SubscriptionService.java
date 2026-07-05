@@ -46,6 +46,7 @@ public class SubscriptionService {
 
     private final SiteSubscriptionRepository siteSubscriptionRepository;
     private final FlatRepository flatRepository;
+    private final SmsEventService smsEventService;
     public SubscriptionStatusResponse getStatus(UUID userId) {
 
         User user = userRepository.findById(userId).orElseThrow();
@@ -345,6 +346,16 @@ public class SubscriptionService {
             site.setSubscriptionEndDate(endDate);
 
             siteRepository.save(site);
+            List<User> admins =
+                    userRepository.findBySiteIdAndRoleAndIsActive(
+                            site.getSiteId(),
+                            "ADMIN",
+                            true
+                    );
+
+            for (User admin : admins) {
+                smsEventService.subscriptionActivated(admin, site);
+            }
 
             return VerifySubscriptionPaymentResponse.builder()
                     .status("ACTIVE")
@@ -452,12 +463,29 @@ public class SubscriptionService {
         site.setSubscriptionEndDate(endDate);
 
         siteRepository.save(site);
+        List<User> admins =
+                userRepository.findBySiteIdAndRoleAndIsActive(
+                        site.getSiteId(),
+                        "ADMIN",
+                        true
+                );
 
+        for (User admin : admins) {
+            smsEventService.subscriptionActivated(admin, site);
+        }
         return VerifySubscriptionPaymentResponse.builder()
                 .status("ACTIVE")
                 .message("Test subscription activated successfully")
                 .subscriptionStartDate(startDate)
                 .subscriptionEndDate(endDate)
                 .build();
+    }
+
+    private List<User> getSiteAdmins(UUID siteId) {
+        return userRepository.findBySiteIdAndRoleAndIsActive(
+                siteId,
+                "ADMIN",
+                true
+        );
     }
 }
