@@ -16,130 +16,121 @@ public final class SmsVariables {
     }
 
     public static Map<String, String> loginOtp(String otp) {
-        return Map.of("otp", safe(otp));
+        return Map.of(
+                "VAR1", safe(otp)
+        );
     }
 
     public static Map<String, String> paymentRequestCreated(User user, PaymentRequest paymentRequest) {
         return Map.of(
-                "name", safe(user.getName()),
-                "amount", amount(paymentRequest.getAmount()),
-                "flat", safe(user.getFlatNumber()),
-                "due_date", date(paymentRequest.getDueDate())
+                "VAR1", safe(user.getName()),
+                "VAR2", amount(paymentRequest.getAmount()),
+                "VAR3", safe(user.getFlatNumber()),
+                "VAR4", date(paymentRequest.getDueDate())
         );
     }
 
     public static Map<String, String> paymentDueReminder(User user, BigDecimal amount, String flatNumber, LocalDate dueDate) {
         return Map.of(
-                "name", safe(user.getName()),
-                "amount", amount(amount),
-                "flat", safe(flatNumber),
-                "due_date", date(dueDate)
+                "VAR1", safe(flatNumber),
+                "VAR2", amount(amount),
+                "VAR3", date(dueDate)
         );
     }
 
     public static Map<String, String> paymentSubmitted(User user, MaintenancePayment payment) {
-        return paymentBasic(user, payment);
+        return Map.of(
+                "VAR1", safe(user.getFlatNumber()),
+                "VAR2", amount(payment.getAmount())
+        );
     }
 
     public static Map<String, String> paymentApproved(User user, MaintenancePayment payment) {
-        return paymentBasic(user, payment);
+        return Map.of(
+                "VAR1", safe(user.getFlatNumber()),
+                "VAR2", amount(payment.getAmount())
+        );
     }
 
     public static Map<String, String> paymentRejected(User user, MaintenancePayment payment, String reason) {
         return Map.of(
-                "name", safe(user.getName()),
-                "amount", amount(payment.getAmount()),
-                "flat", safe(user.getFlatNumber()),
-                "reason", safe(reason)
+                "VAR1", safe(user.getFlatNumber()),
+                "VAR2", amount(payment.getAmount()),
+                "VAR3", safe(reason)
         );
     }
 
     public static Map<String, String> directPaymentRecorded(User user, MaintenancePayment payment) {
-        return paymentBasic(user, payment);
+        return Map.of(
+                "VAR1", amount(payment.getAmount()),
+                "VAR2", safe(user.getFlatNumber())
+        );
     }
 
     public static Map<String, String> noticeCreated(User user, Notice notice) {
         return Map.of(
-                "name", safe(user.getName()),
-                "notice_title", safe(notice.getTitle())
+                "VAR1", safe(notice.getTitle())
         );
     }
 
     public static Map<String, String> meetingCreated(User user, Meeting meeting) {
         return Map.of(
-                "name", safe(user.getName()),
-                "meeting_title", safe(meeting.getTitle()),
-                "meeting_date", meeting.getMeetingDate() == null ? "-" : meeting.getMeetingDate().format(DATE_TIME_FORMAT)
+                "VAR1", safe(meeting.getTitle()),
+                "VAR2", meeting.getMeetingDate() == null ? "-" : meeting.getMeetingDate().format(DATE_TIME_FORMAT)
         );
     }
 
     public static Map<String, String> complaintCreated(User user, Complaint complaint) {
         return Map.of(
-                "name", safe(user.getName()),
-                "complaint_title", safe(complaint.getTitle())
+                "VAR1", safe(user.getName()),
+                "VAR2", safe(complaint.getTitle())
         );
     }
 
     public static Map<String, String> complaintUpdated(User user, Complaint complaint) {
         return Map.of(
-                "name", safe(user.getName()),
-                "complaint_title", safe(complaint.getTitle()),
-                "status", safe(complaint.getStatus())
+                "VAR1", safe(complaint.getTitle()),
+                "VAR2", safe(complaint.getStatus())
         );
     }
 
     public static Map<String, String> trialStarted(User adminUser, Site site) {
         return Map.of(
-                "name", safe(adminUser.getName()),
-                "society", safe(site.getSiteName()),
-                "days", "90"
+                "VAR1", safe(site.getSiteName()),
+                "VAR2", "90"
         );
     }
 
     public static Map<String, String> trialExpiryReminder(User adminUser, Site site, long daysLeft) {
         return Map.of(
-                "name", safe(adminUser.getName()),
-                "society", safe(site.getSiteName()),
-                "days", String.valueOf(daysLeft)
+                "VAR1", safe(site.getSiteName()),
+                "VAR2", String.valueOf(daysLeft)
         );
     }
 
     public static Map<String, String> trialExpired(User adminUser, Site site) {
-        return nameSociety(adminUser, site);
+        return Map.of(
+                "VAR1", safe(site.getSiteName())
+        );
     }
 
     public static Map<String, String> subscriptionActivated(User adminUser, Site site) {
         return Map.of(
-                "name", safe(adminUser.getName()),
-                "society", safe(site.getSiteName()),
-                "expiry_date", date(site.getSubscriptionEndDate())
+                "VAR1", safe(site.getSiteName()),
+                "VAR2", date(site.getSubscriptionEndDate())
         );
     }
 
     public static Map<String, String> subscriptionExpiryReminder(User adminUser, Site site, long daysLeft) {
         return Map.of(
-                "name", safe(adminUser.getName()),
-                "society", safe(site.getSiteName()),
-                "days", String.valueOf(daysLeft)
+                "VAR1", safe(site.getSiteName()),
+                "VAR2", String.valueOf(daysLeft)
         );
     }
 
     public static Map<String, String> subscriptionExpired(User adminUser, Site site) {
-        return nameSociety(adminUser, site);
-    }
-
-    private static Map<String, String> paymentBasic(User user, MaintenancePayment payment) {
         return Map.of(
-                "name", safe(user.getName()),
-                "amount", amount(payment.getAmount()),
-                "flat", safe(user.getFlatNumber())
-        );
-    }
-
-    private static Map<String, String> nameSociety(User user, Site site) {
-        return Map.of(
-                "name", safe(user.getName()),
-                "society", safe(site.getSiteName())
+                "VAR1", safe(site.getSiteName())
         );
     }
 
