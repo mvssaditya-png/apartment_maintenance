@@ -34,7 +34,7 @@ razorpay:
   key-id: ${RAZORPAY_KEY_ID}
   key-secret: ${RAZORPAY_KEY_SECRET}
 msg91:
-  enabled: false
+  enabled: true
   base-url: https://control.msg91.com/api/v5/flow
   auth-key: ${MSG91_AUTH_KEY:}
   sender-id: MBRSSS
