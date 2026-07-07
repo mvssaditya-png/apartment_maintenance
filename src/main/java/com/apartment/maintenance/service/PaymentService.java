@@ -60,7 +60,7 @@ public class PaymentService {
         payment.setReceiptUrl(dto.getReceiptUrl());
         payment.setPaymentStatus("SUBMITTED");
         payment.setPaymentDate(LocalDateTime.now());
-
+        payment.setSubmittedByUserId(user.getUserId());
         paymentRepo.save(payment);
 
         smsEventService.paymentSubmitted(user, payment);
@@ -106,7 +106,11 @@ public class PaymentService {
         MaintenancePayment payment =
                 paymentRepo.findByPaymentId(dto.getPaymentId()).orElseThrow();
 
-        UUID submittedUserId = paymentRepo.getUserUUID(payment.getFlatId());
+        UUID submittedUserId = payment.getSubmittedByUserId();
+
+        if (submittedUserId == null) {
+            submittedUserId = paymentRepo.getOwnerUserUUID(payment.getFlatId());
+        }
 
         User submittedUser =
                 userRepo.findById(submittedUserId)

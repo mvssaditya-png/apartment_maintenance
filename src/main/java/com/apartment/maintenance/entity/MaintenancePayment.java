@@ -64,8 +64,19 @@ public class MaintenancePayment {
 
     @Column(name = "receipt_pdf_url")
     private String receiptPdfUrl;
+
+    @Column(name = "submitted_by_user_id")
+    private UUID submittedByUserId;
     // getters setters
 
+
+    public UUID getSubmittedByUserId() {
+        return submittedByUserId;
+    }
+
+    public void setSubmittedByUserId(UUID submittedByUserId) {
+        this.submittedByUserId = submittedByUserId;
+    }
 
     public String getReceiptNumber() {
         return receiptNumber;

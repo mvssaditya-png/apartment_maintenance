@@ -354,4 +354,12 @@ order by mp.created_at desc
     ORDER BY mp.paymentYear DESC, mp.paymentMonth DESC, mp.createdAt DESC
 """)
     List<MyDueResponse> findMyDuesWithRequestDetails(UUID flatId);
+
+    @Query("""
+    select u.userId
+    from User u
+    where u.flatId = :flatId
+      and u.residentType = 'OWNER'
+""")
+    UUID getOwnerUserUUID(UUID flatId);
 }
