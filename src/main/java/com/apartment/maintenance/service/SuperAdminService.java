@@ -29,14 +29,6 @@ public class SuperAdminService {
             CreateSiteRequest request
     ) {
 
-        if (userRepository.existsByPhoneNumber(
-                request.getAdminPhoneNumber()
-        )) {
-            throw new RuntimeException(
-                    "Phone number already exists"
-            );
-        }
-
         Site site = new Site();
 
         site.setSiteId(UUID.randomUUID());
@@ -67,26 +59,6 @@ public class SuperAdminService {
         site.setCity(request.getCity());
         site.setState(request.getState());
         siteRepository.save(site);
-        User admin = new User();
-
-        admin.setSiteId(site.getSiteId());
-
-        admin.setName(request.getAdminName());
-
-        admin.setPhoneNumber(
-                request.getAdminPhoneNumber()
-        );
-
-        admin.setEmail(
-                request.getAdminEmail()
-        );
-
-        admin.setRole("ADMIN");
-
-        admin.setIsActive(true);
-
-        userRepository.save(admin);
-        smsEventService.trialStarted(admin, site);
 
         return mapToResponse(site);
     }
@@ -316,26 +288,6 @@ public class SuperAdminService {
         site.setTotalFlats(request.getTotalFlats());
 
         siteRepository.save(site);
-
-        List<User> admins =
-                userRepository.findBySiteIdAndRole(siteId, "ADMIN");
-
-        User admin;
-
-        if (admins.isEmpty()) {
-            admin = new User();
-            admin.setSiteId(siteId);
-            admin.setRole("ADMIN");
-            admin.setIsActive(true);
-        } else {
-            admin = admins.get(0);
-        }
-
-        admin.setName(request.getAdminName());
-        admin.setPhoneNumber(request.getAdminPhoneNumber());
-        admin.setEmail(request.getAdminEmail());
-
-        userRepository.save(admin);
 
         return getSiteSummaryById(siteId);
     }

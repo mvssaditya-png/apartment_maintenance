@@ -22,6 +22,7 @@ public interface FlatRepository extends JpaRepository<Flat, UUID> {
     long countBySiteId(UUID siteId);
 
     List<Flat> findBySiteIdAndIsActiveTrue(UUID siteId);
+
     Optional<Flat> findBySiteIdAndFlatNumber(
             UUID siteId,
             String flatNumber
@@ -52,4 +53,15 @@ public interface FlatRepository extends JpaRepository<Flat, UUID> {
         and f.isActive = true
     """)
     Long countActiveFlats(UUID siteId);
+
+    // ===========================
+    // Add these methods only
+    // ===========================
+
+    List<Flat> findBySiteIdOrderByFlatNumberAsc(UUID siteId);
+
+    boolean existsBySiteIdAndFlatNumberIgnoreCase(
+            UUID siteId,
+            String flatNumber
+    );
 }

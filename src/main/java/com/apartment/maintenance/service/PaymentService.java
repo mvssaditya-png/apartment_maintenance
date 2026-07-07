@@ -146,7 +146,7 @@ public class PaymentService {
                             + " has been approved successfully.",
                     "PAYMENT_APPROVED"
             );
-            smsEventService.paymentSubmitted(user, payment);
+            smsEventService.paymentApproved(user, payment);
         } else {
             payment.setPaymentStatus("REJECTED");
             notificationService.notifyUser(
@@ -160,7 +160,7 @@ public class PaymentService {
                             + " was rejected. Please re-submit payment receipt.",
                     "PAYMENT_REJECTED"
             );
-            smsEventService.paymentSubmitted(user, payment);
+            smsEventService.paymentRejected(user, payment, "Reverify payment");
         }
 
         paymentRepo.save(payment);

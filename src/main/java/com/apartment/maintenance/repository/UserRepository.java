@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
-
+    List<User> findBySiteIdAndIsActive(UUID siteId, Boolean isActive);
     Optional<User> findByPhoneNumber(String phoneNumber);
     Optional<User> findByEmail(String email);
     List<User> findBySiteId(UUID siteId);
@@ -50,4 +50,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     );
     boolean existsByPhoneNumber(String phoneNumber);
     List<User> findBySiteIdAndRoleAndIsActive(UUID siteId, String role, Boolean isActive);
+    Optional<User> findByFlatIdAndResidentType(UUID flatId, String residentType);
+
 }

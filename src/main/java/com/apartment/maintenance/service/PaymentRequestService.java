@@ -120,11 +120,10 @@ public class PaymentRequestService {
 
         paymentRepo.saveAll(payments);
 
-        List<User> residents =
-                userRepo.findBySiteIdAndRole(siteId, "RESIDENT");
+        List<User> users =
+                userRepo.findBySiteIdAndIsActive(siteId, true);
 
-        for (User user : residents) {
-
+        for (User user : users) {
             notificationService.notifyUser(
                     user.getUserId(),
                     siteId,
