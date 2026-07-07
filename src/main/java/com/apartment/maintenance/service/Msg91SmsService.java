@@ -48,7 +48,7 @@ public class Msg91SmsService implements SmsService {
             formattedMobile = formatMobileNumber(mobileNumber);
             payload = buildRequest(formattedMobile, template, variables);
             requestJson = toJson(payload);
-
+            log.info("MSG91 Payload : {}", requestJson);
             if (!msg91Config.isEnabled()) {
                 log.info("MSG91 disabled. SMS skipped. Template: {}, Mobile: {}", template.name(), formattedMobile);
                 saveSmsLog(formattedMobile, template, "SKIPPED", requestJson, "MSG91 disabled", null);
@@ -57,6 +57,7 @@ public class Msg91SmsService implements SmsService {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            log.info("MSG91 authkey :",msg91Config.getAuthKey());
             headers.set("authkey", msg91Config.getAuthKey());
 
             HttpEntity<Msg91Request> request = new HttpEntity<>(payload, headers);
