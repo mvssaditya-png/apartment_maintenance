@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -28,22 +27,15 @@ public class PaymentService {
     private final NotificationService notificationService;
     private final ReceiptPdfService receiptPdfService;
     private final SmsEventService smsEventService;
+
     public List<MyDueResponse> getMyPendingPayments(UUID userId) {
-
         User user = userRepo.findById(userId).orElseThrow();
-
-        return paymentRepo.findMyDuesWithRequestDetails(
-                user.getFlatId()
-        );
+        return paymentRepo.findMyDuesWithRequestDetails(user.getFlatId());
     }
-    @Transactional
-    public void payMaintenance(
-            UUID userId,
-            PayMaintenanceRequest dto) {
 
-        MaintenancePayment payment =
-                paymentRepo.findById(dto.getPaymentId())
-                        .orElseThrow();
+    @Transactional
+    public void payMaintenance(UUID userId, PayMaintenanceRequest dto) {
+        MaintenancePayment payment = paymentRepo.findById(dto.getPaymentId()).orElseThrow();
 
         payment.setPaymentMode(dto.getPaymentMode());
         payment.setReceiptUrl(dto.getReceiptUrl());
@@ -51,20 +43,15 @@ public class PaymentService {
         payment.setPaymentDate(LocalDateTime.now());
 
         paymentRepo.save(payment);
-
     }
 
-    public void submitPayment(
-            UUID userId,
-            PayMaintenanceRequest dto) {
-
+    @Transactional
+    public void submitPayment(UUID userId, PayMaintenanceRequest dto) {
         MaintenancePayment payment =
-                paymentRepo.findByPaymentId(dto.getPaymentId())
-                        .orElseThrow();
+                paymentRepo.findByPaymentId(dto.getPaymentId()).orElseThrow();
 
         User user = userRepo.findById(userId).orElseThrow();
 
-        // Ensure resident submits only own flat payment
         if (!payment.getFlatId().equals(user.getFlatId())) {
             throw new RuntimeException("Unauthorized payment");
         }
@@ -73,14 +60,14 @@ public class PaymentService {
         payment.setReceiptUrl(dto.getReceiptUrl());
         payment.setPaymentStatus("SUBMITTED");
         payment.setPaymentDate(LocalDateTime.now());
+
         paymentRepo.save(payment);
+
         smsEventService.paymentSubmitted(user, payment);
     }
 
     public List<PaymentApprovalResponse> pendingApprovals(UUID userId) {
-
-        User user = userRepo.findById(userId)
-                .orElseThrow();
+        User user = userRepo.findById(userId).orElseThrow();
 
         List<Object[]> rows;
 
@@ -95,7 +82,7 @@ public class PaymentService {
                         (UUID) row[0],
                         (UUID) row[1],
                         (String) row[2],
-                        (BigDecimal) row[3],
+                        (java.math.BigDecimal) row[3],
                         (Integer) row[4],
                         (Integer) row[5],
                         (String) row[6],
@@ -106,73 +93,92 @@ public class PaymentService {
                 ))
                 .toList();
     }
-    public void verifyPayment(
-            UUID userId,
-            VerifyPaymentRequest dto) {
 
-        User user = userRepo.findById(userId).orElseThrow();
+    @Transactional
+    public void verifyPayment(UUID userId, VerifyPaymentRequest dto) {
+        User approver = userRepo.findById(userId).orElseThrow();
 
-        if (!user.getRole().equalsIgnoreCase("ADMIN")
-                && !user.getRole().equalsIgnoreCase("CASHIER")) {
+        if (!approver.getRole().equalsIgnoreCase("ADMIN")
+                && !approver.getRole().equalsIgnoreCase("CASHIER")) {
             throw new UnauthorizedActionException("Not allowed");
         }
 
         MaintenancePayment payment =
-                paymentRepo.findByPaymentId(dto.getPaymentId())
-                        .orElseThrow();
+                paymentRepo.findByPaymentId(dto.getPaymentId()).orElseThrow();
+
+        UUID submittedUserId = paymentRepo.getUserUUID(payment.getFlatId());
+
+        User submittedUser =
+                userRepo.findById(submittedUserId)
+                        .orElseThrow(() -> new RuntimeException("Payment submitted user not found"));
 
         if (dto.isApproved()) {
             payment.setPaymentStatus("PAID");
             payment.setApprovedAt(LocalDateTime.now());
+
             ledgerService.addCredit(
-                    user.getSiteId(),
+                    approver.getSiteId(),
                     payment.getAmount(),
                     "PAYMENT",
                     payment.getPaymentId(),
                     "Maintenance payment received"
             );
+
             String receiptPdfUrl = receiptPdfService.generateReceiptPdf(payment);
             payment.setReceiptPdfUrl(receiptPdfUrl);
+
             paymentRepo.save(payment);
 
             notificationService.notifyUser(
-                    userId,
+                    submittedUser.getUserId(),
                     payment.getSiteId(),
                     "Payment Approved",
                     "Your payment of ₹" + payment.getAmount()
                             + " for "
                             + payment.getPaymentMonth()
-                            + "/" + payment.getPaymentYear()
+                            + "/"
+                            + payment.getPaymentYear()
                             + " has been approved successfully.",
                     "PAYMENT_APPROVED"
             );
-            smsEventService.paymentApproved(user, payment);
+
+            smsEventService.paymentApproved(submittedUser, payment);
         } else {
             payment.setPaymentStatus("REJECTED");
+
+            paymentRepo.save(payment);
+
             notificationService.notifyUser(
-                    userId,
+                    submittedUser.getUserId(),
                     payment.getSiteId(),
                     "Payment Rejected",
                     "Your payment of ₹" + payment.getAmount()
                             + " for "
                             + payment.getPaymentMonth()
-                            + "/" + payment.getPaymentYear()
+                            + "/"
+                            + payment.getPaymentYear()
                             + " was rejected. Please re-submit payment receipt.",
                     "PAYMENT_REJECTED"
             );
-            smsEventService.paymentRejected(user, payment, "Reverify payment");
-        }
 
-        paymentRepo.save(payment);
+            smsEventService.paymentRejected(
+                    submittedUser,
+                    payment,
+                    "Please re-submit payment receipt"
+            );
+        }
     }
+
     @Transactional
     public void approvePayment(UUID paymentId) {
+        MaintenancePayment payment = paymentRepo.findById(paymentId).orElseThrow();
 
-        MaintenancePayment payment =
-                paymentRepo.findById(paymentId)
-                        .orElseThrow();
+        UUID submittedUserId = paymentRepo.getUserUUID(payment.getFlatId());
 
-        UUID userId = paymentRepo.getUserUUID(payment.getFlatId());
+        User submittedUser =
+                userRepo.findById(submittedUserId)
+                        .orElseThrow(() -> new RuntimeException("Payment submitted user not found"));
+
         ledgerService.addCredit(
                 payment.getSiteId(),
                 payment.getAmount(),
@@ -180,60 +186,73 @@ public class PaymentService {
                 payment.getPaymentId(),
                 "Maintenance payment received"
         );
+
         payment.setPaymentStatus("PAID");
+        payment.setApprovedAt(LocalDateTime.now());
+
         String receiptPdfUrl = receiptPdfService.generateReceiptPdf(payment);
         payment.setReceiptPdfUrl(receiptPdfUrl);
+
         paymentRepo.save(payment);
-        paymentRepo.save(payment);
+
         notificationService.notifyUser(
-                userId,
+                submittedUser.getUserId(),
                 payment.getSiteId(),
                 "Payment Approved",
                 "Your payment of ₹" + payment.getAmount()
                         + " for "
                         + payment.getPaymentMonth()
-                        + "/" + payment.getPaymentYear()
+                        + "/"
+                        + payment.getPaymentYear()
                         + " has been approved successfully.",
                 "PAYMENT_APPROVED"
         );
-        User resident = userRepo.findById(userId).orElse(null);
-        smsEventService.paymentApproved(resident, payment);
 
+        smsEventService.paymentApproved(submittedUser, payment);
     }
 
     @Transactional
     public void rejectPayment(UUID paymentId) {
+        MaintenancePayment payment = paymentRepo.findById(paymentId).orElseThrow();
 
-        MaintenancePayment payment =
-                paymentRepo.findById(paymentId)
-                        .orElseThrow();
-        UUID userId = paymentRepo.getUserUUID(payment.getFlatId());
+        UUID submittedUserId = paymentRepo.getUserUUID(payment.getFlatId());
+
+        User submittedUser =
+                userRepo.findById(submittedUserId)
+                        .orElseThrow(() -> new RuntimeException("Payment submitted user not found"));
+
         payment.setPaymentStatus("REJECTED");
+
+        paymentRepo.save(payment);
+
         notificationService.notifyUser(
-                userId,
+                submittedUser.getUserId(),
                 payment.getSiteId(),
                 "Payment Rejected",
                 "Your payment of ₹" + payment.getAmount()
                         + " for "
                         + payment.getPaymentMonth()
-                        + "/" + payment.getPaymentYear()
+                        + "/"
+                        + payment.getPaymentYear()
                         + " was rejected. Please re-submit payment receipt.",
                 "PAYMENT_REJECTED"
         );
-        User resident = userRepo.findById(userId).orElse(null);
-        smsEventService.paymentRejected(resident, payment, "Please re-submit payment receipt");
-        paymentRepo.save(payment);
+
+        smsEventService.paymentRejected(
+                submittedUser,
+                payment,
+                "Please re-submit payment receipt"
+        );
     }
 
     public List<MaintenancePayment> getMyHistory(UUID userId) {
-
-        User user = userRepo.findById(userId)
-                .orElseThrow();
+        User user = userRepo.findById(userId).orElseThrow();
 
         Flat flat = flatRepo
                 .findBySiteIdAndFlatNumber(
                         user.getSiteId(),
-                        user.getFlatNumber())
+                        user.getFlatNumber()
+                )
                 .orElseThrow();
 
         return paymentRepo
@@ -244,7 +263,6 @@ public class PaymentService {
     }
 
     public List<MaintenancePayment> getPendingPaymentsByFlat(UUID userId, UUID flatId) {
-
         User user = userRepo.findById(userId).orElseThrow();
 
         if (!user.getRole().equalsIgnoreCase("ADMIN")
@@ -254,15 +272,11 @@ public class PaymentService {
             );
         }
 
-        return paymentRepo.findByFlatIdAndPaymentStatusNot(
-                flatId,
-                "PAID"
-        );
+        return paymentRepo.findByFlatIdAndPaymentStatusNot(flatId, "PAID");
     }
 
     @Transactional
     public String recordPayment(UUID userId, RecordPaymentRequest request) {
-
         User user = userRepo.findById(userId).orElseThrow();
 
         if (!user.getRole().equalsIgnoreCase("ADMIN")
@@ -273,8 +287,7 @@ public class PaymentService {
         }
 
         MaintenancePayment payment =
-                paymentRepo.findByPaymentId(request.getPaymentId())
-                        .orElseThrow();
+                paymentRepo.findByPaymentId(request.getPaymentId()).orElseThrow();
 
         payment.setPaymentMode(request.getPaymentMode());
         payment.setReceiptUrl(request.getReceiptUrl());
@@ -284,9 +297,6 @@ public class PaymentService {
 
         paymentRepo.save(payment);
 
-        // Reuse your existing ledger/balance update logic here.
-        // Same logic used when cashier approves submitted payment.
-
         ledgerService.addCredit(
                 payment.getSiteId(),
                 payment.getAmount(),
@@ -294,25 +304,32 @@ public class PaymentService {
                 payment.getPaymentId(),
                 "Maintenance payment received"
         );
+
         String receiptPdfUrl = receiptPdfService.generateReceiptPdf(payment);
         payment.setReceiptPdfUrl(receiptPdfUrl);
+
         paymentRepo.save(payment);
-        UUID residentUserId = paymentRepo.getUserUUID(payment.getFlatId());
+
+        UUID submittedUserId = paymentRepo.getUserUUID(payment.getFlatId());
+
+        User submittedUser =
+                userRepo.findById(submittedUserId)
+                        .orElseThrow(() -> new RuntimeException("Payment submitted user not found"));
 
         notificationService.notifyUser(
-                residentUserId,
+                submittedUser.getUserId(),
                 payment.getSiteId(),
                 "Payment Recorded",
                 "A payment of ₹" + payment.getAmount()
                         + " for "
                         + payment.getPaymentMonth()
-                        + "/" + payment.getPaymentYear()
+                        + "/"
+                        + payment.getPaymentYear()
                         + " has been recorded by Admin.",
                 "PAYMENT_RECORDED"
         );
 
-        User resident = userRepo.findById(residentUserId).orElse(null);
-        smsEventService.directPaymentRecorded(resident, payment);
+        smsEventService.directPaymentRecorded(submittedUser, payment);
 
         return "Payment recorded successfully";
     }
