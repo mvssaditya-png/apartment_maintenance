@@ -70,4 +70,33 @@ public class S3Service {
             throw new RuntimeException("Unable to upload file to S3", e);
         }
     }
+
+    public String uploadBytes(
+            byte[] fileBytes,
+            String folder,
+            String fileName,
+            String contentType
+    ) {
+        String key = folder + "/" + fileName;
+
+        PutObjectRequest request =
+                PutObjectRequest.builder()
+                        .bucket(bucketName)
+                        .key(key)
+                        .contentType(contentType)
+                        .contentLength((long) fileBytes.length)
+                        .build();
+
+        s3Client.putObject(
+                request,
+                RequestBody.fromBytes(fileBytes)
+        );
+
+        return "https://"
+                + bucketName
+                + ".s3."
+                + region
+                + ".amazonaws.com/"
+                + key;
+    }
 }
